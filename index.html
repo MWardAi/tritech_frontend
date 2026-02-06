@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script>
+    // Point the frontend to your deployed backend
+    window.BASE_URL = 'https://tritech-backend-1w10.onrender.com';
+    // api.js reads window.API_BASE if present; set both to be safe
+  </script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SmartTourist — Signup & Login</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- External stylesheet (you said you have styles.css) -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Core inline styles to guarantee the creamy palette and polished layout even before styles.css -->
+  <style>
+    :root{
+      --cream-1: #fffdf8;   /* soft white */
+      --cream-2: #fff6ea;   /* warm cream */
+      --gold-cream: #f6e7d6;/* gold-cream accent */
+      --blue-cream: #eaf6ff;/* subtle creamy blue */
+      --accent: #6aa6ff;    /* AI vibe blue */
+      --muted: #7b7b7b;
+      --glass: rgba(255,255,255,0.6);
+      --radius: 14px;
+      --shadow: 0 8px 30px rgba(20,20,30,0.08);
+      --glass-border: 1px solid rgba(255,255,255,0.6);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background: linear-gradient(180deg, var(--cream-1) 0%, var(--blue-cream) 100%);
+      color:#1b1b1b;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .container{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:48px 20px;
+      box-sizing:border-box;
+      margin: 0 auto;
+      max-width: 1200px;
+    }
+
+    .card {
+      width:100%;
+      max-width:980px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(246,235,220,0.9));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      overflow:hidden;
+      border: 1px solid rgba(0,0,0,0.03);
+      box-sizing: border-box;
+      overflow: visible; /* allow internal shadows, but children should wrap */ 
+    }
+
+    /* Left panel: branding & hero */
+    .hero {
+      padding:36px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(250,245,240,0.9));
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      align-items:flex-start;
+      justify-content:center;
+    }
+
+    .logo-placeholder {
+      width:72px;
+      height:72px;
+      border-radius:14px;
+      background: linear-gradient(135deg, var(--gold-cream), var(--accent));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-weight:700;
+      font-size:20px;
+      box-shadow: 0 6px 18px rgba(106,166,255,0.12);
+    }
+
+    .title {
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:-0.02em;
+      margin:0;
+      color:#0f1720;
+    }
+
+    .hero-illustration {
+      margin-top:auto;
+      width:100%;
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .pill {
+      display:inline-flex;
+      gap:10px;
+      align-items:center;
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(106,166,255,0.08);
+      color:var(--accent);
+      font-weight:600;
+      font-size:13px;
+      border: 1px solid rgba(106,166,255,0.08);
+    }
+
+    /* Right panel: forms */
+    .panel {
+      padding:28px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+      backdrop-filter: blur(6px);
+      min-width: 0;
+    }
+
+    .tabs {
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .tab {
+      padding:8px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+      color:var(--muted);
+      background:transparent;
+      border: none;
+      transition: all .18s ease;
+    }
+
+    .tab.active {
+      background: linear-gradient(90deg, rgba(106,166,255,0.12), rgba(246,231,210,0.12));
+      color:var(--accent);
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.02);
+    }
+
+    form {
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      margin-top:6px;
+    }
+
+    label {
+      font-size:13px;
+      color:#222;
+      font-weight:600;
+    }
+
+    .input, select, textarea {
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid rgba(20,20,30,0.06);
+      background: rgba(255,255,255,0.9);
+      font-size:14px;
+      outline:none;
+      transition: box-shadow .12s ease, transform .08s ease;
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+
+    .input:focus, select:focus, textarea:focus {
+      box-shadow: 0 6px 18px rgba(106,166,255,0.12);
+      transform: translateY(-1px);
+      border-color: rgba(106,166,255,0.28);
+    }
+
+    .row {
+      display:flex;
+      gap:12px;
+    }
+
+    .col {
+      flex:1;
+    }
+
+    .prefs {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:6px;
+    }
+
+    .pref {
+      padding:8px 10px;
+      border-radius:10px;
+      background:var(--cream-2);
+      border:1px solid rgba(0,0,0,0.03);
+      cursor:pointer;
+      font-weight:600;
+      color:#333;
+      font-size:13px;
+      transition: all .12s ease;
+      user-select:none;
+    }
+
+    .pref.selected {
+      background: linear-gradient(90deg, rgba(106,166,255,0.12), rgba(246,231,210,0.12));
+      color:var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(106,166,255,0.08);
+    }
+
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:12px 16px;
+      border-radius:12px;
+      border:none;
+      cursor:pointer;
+      font-weight:700;
+      color:white;
+      background: linear-gradient(90deg, var(--accent), #4b8bff);
+      box-shadow: 0 10px 30px rgba(75,139,255,0.12);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color:var(--accent);
+      border:1px solid rgba(106,166,255,0.12);
+      box-shadow:none;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .muted {
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .message {
+      padding:10px 12px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:13px;
+    }
+
+    .message.error {
+      background: #ffecec;
+      color: #b00020;
+      border:1px solid rgba(176,0,32,0.08);
+    }
+
+    .message.success {
+      background: #e9fff3;
+      color: #0b7a3a;
+      border:1px solid rgba(11,122,58,0.06);
+    }
+
+    .profile {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding-top:6px;
+    }
+
+    .small {
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    footer {
+      font-size:12px;
+      color:var(--muted);
+      margin-top:auto;
+      padding-top:8px;
+    }
+        /* Preference showcase styles */
+    .prefs-showcase {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    
+    .prefs-showcase.hidden {
+      display: none;
+    }
+    
+    .prefs-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    
+    .robot-img {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 10px;
+    }
+    
+    .prefs-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    
+    .pref-box {
+      padding: 10px 15px;
+      border-radius: 10px;
+      background: var(--cream-2);
+      border: 1px solid rgba(0,0,0,0.04);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .prefs-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width:900px){
+      .card { grid-template-columns: 1fr; padding: 18px; gap: 12px; }
+      .hero { order:2; padding:20px; }
+      .panel { order:1; padding:20px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top navigation / profile (paste above the main .container) -->
+  <nav id="top-nav" class="top-nav" aria-label="Main navigation">
+    <div id="nav-left" class="nav-left" aria-hidden="true"></div>
+
+    <div id="nav-right" class="nav-right" style="display:flex;align-items:center;gap:12px;">
+      <!-- Profile placeholder (hidden until authenticated) -->
+      <div id="nav-profile" class="nav-profile" style="display:none;position:relative;">
+        <button id="nav-profile-btn" class="nav-profile-btn" aria-haspopup="true" aria-expanded="false" title="Open profile menu">
+          <span id="nav-profile-initial" aria-hidden="true">U</span>
+        </button>
+
+        <div id="nav-profile-menu" class="nav-profile-menu" role="menu" aria-hidden="true" style="display:none;">
+          <div id="nav-profile-username" class="small" style="margin-bottom:8px;font-weight:700;">Username</div>
+          <div style="display:flex;gap:8px;">
+            <button id="nav-logout" class="btn secondary" type="button">Log out</button>
+            <button id="nav-open-profile" class="btn" type="button">Profile</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <main class="card" role="main" aria-labelledby="main-title">
+
+      <!-- LEFT: Branding / Hero -->
+      <section class="hero" aria-hidden="false">
+        <div style="display:flex;gap:14px;align-items:center;">
+          <div class="logo-placeholder" aria-hidden="true">ST</div>
+          <div>
+            <h1 id="main-title" class="title">Smart Tourist</h1>
+            <!-- subtitle removed as requested -->
+          </div>
+        </div>
+
+        <!-- hero-illustration pills removed as requested -->
+
+        <!-- quick tips removed as requested -->
+
+        <footer>
+          <div class="small">Built for SmartTour Syria • Prototype</div>
+        </footer>
+      </section>
+
+      <!-- RIGHT: Auth Panel -->
+      <section class="panel" aria-label="Authentication panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="tabs" role="tablist" aria-label="Authentication tabs">
+            <button class="tab active" id="tab-signup" role="tab" aria-selected="true">Sign up</button>
+            <button class="tab" id="tab-login" role="tab" aria-selected="false">Log in</button>
+          </div>
+          <div class="muted" id="status-indicator">Offline</div>
+        </div>
+
+        <!-- Messages -->
+        <div id="message-area" aria-live="polite"></div>
+
+        <!-- Signup Form -->
+        <form id="signup-form" novalidate>
+          <label for="su-email">Email</label>
+          <input id="su-email" class="input" type="email" name="email" autocomplete="email" required placeholder="you@example.com">
+
+          <label for="su-password">Password</label>
+          <input id="su-password" class="input" type="password" name="password" minlength="8" required placeholder="At least 8 characters">
+
+          <div class="row">
+            <div class="col">
+              <label for="su-username">Username</label>
+              <input id="su-username" class="input" type="text" name="username" minlength="3" maxlength="30" required placeholder="Your display name">
+            </div>
+            <div class="col">
+              <label for="su-country">Country</label>
+              <select id="su-country" class="input" name="country" required>
+                <option value="">Loading countries…</option>
+              </select>
+            </div>
+            <div class="col">
+              <label for="su-salary">Salary (USD)</label>
+              <input id="su-salary" class="input" type="number" name="salary" min="0" step="1" required placeholder="Salary in USD">
+            </div>
+          </div>
+
+          <div>
+            <label>Preferences</label>
+            <div id="prefs-container" class="prefs" role="group" aria-label="Preferences">
+              <!-- preferences will be injected here -->
+            </div>
+            <div class="small" style="margin-top:6px;">Choose 1–5 interests</div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:6px;">
+            <button type="submit" class="btn">Create account</button>
+            <button type="button" id="to-login" class="btn secondary">I already have an account</button>
+          </div>
+          <div id="signup-success-hint" class="small" style="display:none;margin-top:8px;color:var(--muted);">
+            Account created. Please log in to continue.
+          </div>
+         </form>
+        <!-- Login Form -->
+        <form id="login-form" style="display:none;" novalidate>
+          <label for="li-email">Email</label>
+          <input id="li-email" class="input" type="email" name="email" autocomplete="email" required placeholder="you@example.com">
+
+          <label for="li-password">Password</label>
+          <input id="li-password" class="input" type="password" name="password" minlength="8" required placeholder="Your password">
+
+          <div style="display:flex;gap:10px;margin-top:6px;">
+            <button type="submit" class="btn">Log in</button>
+            <button type="button" id="to-signup" class="btn secondary">Create account</button>
+          </div>
+        </form>
+
+        <!-- Profile view (protected) -->
+        <div id="profile-view" style="display:none;">
+          <div class="profile" aria-live="polite">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#4b8bff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;">U</div>
+              <div>
+                <div id="profile-username" style="font-weight:800;font-size:16px;">Username</div>
+                <div id="profile-email" class="small">email@example.com</div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px;">
+              <div class="small">Country</div>
+              <div id="profile-country" style="font-weight:700;margin-top:6px;">—</div>
+            </div>
+
+            <div style="margin-top:12px;">
+              <div class="small">Preferences</div>
+              <div id="profile-prefs" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;"></div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:18px;">
+              <button id="logout-btn" class="btn secondary">Log out</button>
+              <button id="go-to-app" class="btn">Go to app (placeholder)</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- App scripts -->
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+
+  
+
+  <!-- Preference showcase script (keep this minimal version) -->
+  <script>
+    // Minimal showcase implementation
+    (function() {
+      function showPreferencesShowcase(preferences = []) {
+        const overlay = document.getElementById('prefs-showcase');
+        const grid = document.getElementById('prefs-grid');
+        const keepBtn = document.getElementById('prefs-keep');
+        const changeBtn = document.getElementById('prefs-change');
+        
+        if (!overlay || !grid || !keepBtn || !changeBtn) return;
+        
+        // Render preferences
+        grid.innerHTML = '';
+        preferences.forEach(p => {
+          const box = document.createElement('div');
+          box.style.cssText = 'display:inline-flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);margin:5px;';
+          box.innerHTML = `<div style="font-size:22px">✨</div><div>${p}</div>`;
+          grid.appendChild(box);
+        });
+        
+        // Show overlay
+        overlay.classList.remove('hidden');
+        overlay.setAttribute('aria-hidden', 'false');
+        
+        // Keep button
+        keepBtn.onclick = async () => {
+          try {
+            const token = localStorage.getItem('st_token');
+            if (!token) return;
+            
+            const res = await fetch((window.BASE_URL || '') + '/me/preferences', {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({ preferences })
+            });
+            
+            if (res.ok) {
+              overlay.classList.add('hidden');
+              overlay.setAttribute('aria-hidden', 'true');
+              // Redirect to app
+              window.location.href = 'map.html';
+            }
+          } catch (err) {
+            console.error('Failed to update preferences:', err);
+          }
+        };
+        
+        // Change button
+        changeBtn.onclick = () => {
+          overlay.classList.add('hidden');
+          overlay.setAttribute('aria-hidden', 'true');
+          // Switch to signup tab to edit preferences
+          document.getElementById('tab-signup').click();
+        };
+      }
+      
+      // Expose to window
+      window.showPreferencesShowcase = showPreferencesShowcase;
+    })();
+  </script>
+
+  <!-- Preference showcase overlay (hidden by default) -->
+  <div id="prefs-showcase" class="prefs-showcase hidden" role="dialog" aria-modal="true" aria-labelledby="prefs-title" aria-hidden="true">
+    <div class="prefs-card" role="document" aria-describedby="prefs-desc">
+      <!-- Robot image: replace src with your asset or keep as placeholder SVG -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <img id="prefs-robot" class="robot-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 24 24'><rect rx='6' width='24' height='24' fill='%23f6e7d6'/><circle cx='8' cy='9' r='1.6' fill='%236aa6ff'/><circle cx='16' cy='9' r='1.6' fill='%236aa6ff'/><path d='M7 15c1.2 1.2 4.8 1.2 6 0' stroke='%236aa6ff' stroke-width='1.4' stroke-linecap='round' fill='none'/></svg>" alt="Smiling robot" />
+        <h2 id="prefs-title" style="margin:0;font-size:20px;">Change preferences?</h2>
+        <p id="prefs-desc" class="small" style="max-width:720px;margin:0;">We detected these interests from your signup. Keep them or change them now — you can always update later.</p>
+      </div>
+
+      <div id="prefs-grid" class="prefs-grid" style="margin-top:18px;">
+        <!-- JS will render preference boxes with emoji here -->
+      </div>
+
+      <div class="prefs-actions" style="margin-top:18px;">
+        <button id="prefs-keep" class="btn" type="button">Keep</button>
+        <button id="prefs-change" class="btn secondary" type="button">Change</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
