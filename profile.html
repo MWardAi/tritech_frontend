@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SmartTourist — Profile</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root{
+      --cream-1: #fffdf8;
+      --cream-2: #fff6ea;
+      --gold-cream: #f6e7d6;
+      --blue-cream: #eaf6ff;
+      --accent: #6aa6ff;
+      --muted: #7b7b7b;
+      --glass: rgba(255,255,255,0.6);
+      --radius: 14px;
+      --shadow: 0 8px 30px rgba(20,20,30,0.08);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background: linear-gradient(180deg, var(--cream-1) 0%, var(--blue-cream) 100%);
+      color:#1b1b1b;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .container{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:48px 20px;
+      box-sizing:border-box;
+      margin: 0 auto;
+      max-width: 1200px;
+    }
+
+    .card {
+      width:100%;
+      max-width:600px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(246,235,220,0.9));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:36px;
+      border: 1px solid rgba(0,0,0,0.03);
+      box-sizing: border-box;
+    }
+
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:12px 16px;
+      border-radius:12px;
+      border:none;
+      cursor:pointer;
+      font-weight:700;
+      color:white;
+      background: linear-gradient(90deg, var(--accent), #4b8bff);
+      box-shadow: 0 10px 30px rgba(75,139,255,0.12);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color:var(--accent);
+      border:1px solid rgba(106,166,255,0.12);
+      box-shadow:none;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .input, select {
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid rgba(20,20,30,0.06);
+      background: rgba(255,255,255,0.9);
+      font-size:14px;
+      outline:none;
+      transition: box-shadow .12s ease, transform .08s ease;
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+
+    .input:focus, select:focus {
+      box-shadow: 0 6px 18px rgba(106,166,255,0.12);
+      transform: translateY(-1px);
+      border-color: rgba(106,166,255,0.28);
+    }
+
+    .prefs {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:6px;
+    }
+
+    .pref {
+      padding:8px 10px;
+      border-radius:10px;
+      background:var(--cream-2);
+      border:1px solid rgba(0,0,0,0.03);
+      cursor:pointer;
+      font-weight:600;
+      color:#333;
+      font-size:13px;
+      transition: all .12s ease;
+      user-select:none;
+    }
+
+    .pref.selected {
+      background: linear-gradient(90deg, rgba(106,166,255,0.12), rgba(246,231,210,0.12));
+      color:var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(106,166,255,0.08);
+    }
+
+    .message {
+      padding:10px 12px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:13px;
+      margin-bottom: 16px;
+    }
+
+    .message.error {
+      background: #ffecec;
+      color: #b00020;
+      border:1px solid rgba(176,0,32,0.08);
+    }
+
+    .message.success {
+      background: #e9fff3;
+      color: #0b7a3a;
+      border:1px solid rgba(11,122,58,0.06);
+    }
+
+    .small {
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .profile-section {
+      background: rgba(255,255,255,0.6);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .profile-section h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 18px;
+      color: #0f1720;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #4b8bff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 24px;
+    }
+
+    .profile-details {
+      flex: 1;
+    }
+
+    .profile-details h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #222;
+    }
+
+    .current-prefs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .pref-badge {
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: var(--cream-2);
+      border: 1px solid rgba(0,0,0,0.03);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #222;
+      font-weight: 600;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+  </style>
+  
+  <script>
+    window.BASE_URL = window.BASE_URL || 'https://tritech-backend-1w10.onrender.com';
+    window.TOKEN_KEY = 'st_token';
+  </script>
+</head>
+<body>
+  <nav style="position: fixed; top: 0; right: 0; padding: 20px; z-index: 100;">
+    <a href="map.html" style="text-decoration: none;">
+      <button class="btn secondary" style="font-size: 12px; padding: 8px 12px;">← Back to Map</button>
+    </a>
+  </nav>
+
+  <div class="container">
+    <main class="card">
+      <!-- Messages -->
+      <div id="message-area"></div>
+
+      <!-- Profile Info -->
+      <div class="profile-info">
+        <div id="profile-avatar" class="profile-avatar">U</div>
+        <div class="profile-details">
+          <h1 id="profile-name">Loading...</h1>
+          <div class="small" id="profile-email">user@example.com</div>
+        </div>
+      </div>
+
+      <!-- Basic Info Section -->
+      <div class="profile-section">
+        <h2>Basic Information</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Username</span>
+            <span id="info-username" class="info-value">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Email</span>
+            <span id="info-email" class="info-value">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Country</span>
+            <span id="info-country" class="info-value">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Salary</span>
+            <span id="info-salary" class="info-value">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Preferences Section -->
+      <div class="profile-section">
+        <h2>Current Preferences</h2>
+        <div id="current-prefs" class="current-prefs">
+          <!-- Current preferences will be shown here -->
+        </div>
+      </div>
+
+      <!-- Change Preferences Section -->
+      <div class="profile-section">
+        <h2>Update Preferences</h2>
+        <div id="prefs-container" class="prefs">
+          <!-- Preferences will be injected here -->
+        </div>
+        <div class="small" style="margin-top:8px;">Choose 1–5 interests</div>
+        <div class="actions">
+          <button id="save-prefs" class="btn">Save Preferences</button>
+          <button id="cancel-prefs" class="btn secondary">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Change Password Section -->
+      <div class="profile-section">
+        <h2>Change Password</h2>
+        <div class="form-group">
+          <label for="current-password">Current Password</label>
+          <input id="current-password" class="input" type="password" placeholder="Enter your current password">
+        </div>
+        <div class="form-group">
+          <label for="new-password">New Password</label>
+          <input id="new-password" class="input" type="password" placeholder="At least 8 characters">
+        </div>
+        <div class="form-group">
+          <label for="confirm-password">Confirm New Password</label>
+          <input id="confirm-password" class="input" type="password" placeholder="Confirm new password">
+        </div>
+        <div class="actions">
+          <button id="save-password" class="btn">Change Password</button>
+          <button id="cancel-password" class="btn secondary">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Logout Section -->
+      <div class="profile-section">
+        <h2>Account</h2>
+        <button id="logout-btn" class="btn secondary">Log Out</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    // Profile page functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const TOKEN_KEY = window.TOKEN_KEY || 'st_token';
+      const token = localStorage.getItem(TOKEN_KEY);
+      
+      // Redirect if not authenticated
+      if (!token) {
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      // DOM elements
+      const messageArea = document.getElementById('message-area');
+      const profileAvatar = document.getElementById('profile-avatar');
+      const profileName = document.getElementById('profile-name');
+      const profileEmail = document.getElementById('profile-email');
+      const infoUsername = document.getElementById('info-username');
+      const infoEmail = document.getElementById('info-email');
+      const infoCountry = document.getElementById('info-country');
+      const infoSalary = document.getElementById('info-salary');
+      const currentPrefs = document.getElementById('current-prefs');
+      const prefsContainer = document.getElementById('prefs-container');
+      const savePrefsBtn = document.getElementById('save-prefs');
+      const cancelPrefsBtn = document.getElementById('cancel-prefs');
+      const currentPassword = document.getElementById('current-password');
+      const newPassword = document.getElementById('new-password');
+      const confirmPassword = document.getElementById('confirm-password');
+      const savePasswordBtn = document.getElementById('save-password');
+      const cancelPasswordBtn = document.getElementById('cancel-password');
+      const logoutBtn = document.getElementById('logout-btn');
+      
+      // State
+      let user = null;
+      let allPreferences = [];
+      let selectedPrefs = new Set();
+      const MAX_PREFS = 5;
+      
+      // Show message utility
+      function showMessage(text, type = 'error', timeout = 5000) {
+        messageArea.innerHTML = '';
+        const el = document.createElement('div');
+        el.className = `message ${type}`;
+        el.textContent = text;
+        messageArea.appendChild(el);
+        if (timeout) {
+          setTimeout(() => {
+            if (messageArea.contains(el)) messageArea.removeChild(el);
+          }, timeout);
+        }
+      }
+      
+      // Load user profile
+      async function loadProfile() {
+        try {
+          const response = await fetch(window.BASE_URL + '/me', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to load profile');
+          }
+          
+          const data = await response.json();
+          user = data.user;
+          updateProfileDisplay();
+          loadPreferences();
+        } catch (error) {
+          console.error('Error loading profile:', error);
+          showMessage('Failed to load profile. Please try again.', 'error');
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 2000);
+        }
+      }
+      
+      // Load available preferences
+      async function loadPreferences() {
+        try {
+          const response = await fetch(window.BASE_URL + '/meta');
+          if (response.ok) {
+            const data = await response.json();
+            allPreferences = data.preferences || [];
+          } else {
+            // Fallback
+            allPreferences = ['ancient/historical', 'meditation/nature', 'cultural food/restaurants', 'cultural places', 'gaming/fun'];
+          }
+        } catch (error) {
+          allPreferences = ['ancient/historical', 'meditation/nature', 'cultural food/restaurants', 'cultural places', 'gaming/fun'];
+        }
+        
+        renderPreferences();
+      }
+      
+      // Update profile display
+      function updateProfileDisplay() {
+        if (!user) return;
+        
+        // Avatar initial
+        const initial = (user.username || user.email || 'U').charAt(0).toUpperCase();
+        profileAvatar.textContent = initial;
+        
+        // Basic info
+        profileName.textContent = user.username || 'User';
+        profileEmail.textContent = user.email || '';
+        infoUsername.textContent = user.username || '-';
+        infoEmail.textContent = user.email || '-';
+        infoCountry.textContent = user.country || '-';
+        infoSalary.textContent = user.salary ? `$${user.salary}` : '-';
+        
+        // Current preferences
+        currentPrefs.innerHTML = '';
+        (user.preferences || []).forEach(pref => {
+          const badge = document.createElement('div');
+          badge.className = 'pref-badge';
+          badge.textContent = pref;
+          currentPrefs.appendChild(badge);
+        });
+      }
+      
+      // Render preference selection
+      function renderPreferences() {
+        if (!user) return;
+        
+        prefsContainer.innerHTML = '';
+        selectedPrefs.clear();
+        
+        // Initialize with current preferences
+        (user.preferences || []).forEach(pref => {
+          selectedPrefs.add(pref);
+        });
+        
+        allPreferences.forEach(pref => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'pref';
+          button.textContent = pref;
+          button.dataset.pref = pref;
+          
+          if (selectedPrefs.has(pref)) {
+            button.classList.add('selected');
+          }
+          
+          button.addEventListener('click', () => {
+            if (selectedPrefs.has(pref)) {
+              selectedPrefs.delete(pref);
+              button.classList.remove('selected');
+            } else {
+              if (selectedPrefs.size >= MAX_PREFS) {
+                showMessage(`Maximum ${MAX_PREFS} preferences allowed`, 'error', 2000);
+                return;
+              }
+              selectedPrefs.add(pref);
+              button.classList.add('selected');
+            }
+          });
+          
+          prefsContainer.appendChild(button);
+        });
+      }
+      
+      // Save preferences
+      async function savePreferences() {
+        if (selectedPrefs.size === 0) {
+          showMessage('Please select at least one preference', 'error');
+          return;
+        }
+        
+        try {
+          const response = await fetch(window.BASE_URL + '/me/preferences', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ preferences: Array.from(selectedPrefs) })
+          });
+          
+          if (response.ok) {
+            showMessage('Preferences updated successfully!', 'success');
+            // Reload profile to get updated data
+            setTimeout(() => {
+              loadProfile();
+            }, 1000);
+          } else {
+            const data = await response.json();
+            showMessage(data.error || 'Failed to update preferences', 'error');
+          }
+        } catch (error) {
+          console.error('Error updating preferences:', error);
+          showMessage('Network error. Please try again.', 'error');
+        }
+      }
+      
+      // Change password
+      async function changePassword() {
+        const current = currentPassword.value;
+        const newPass = newPassword.value;
+        const confirm = confirmPassword.value;
+        
+        if (!current || !newPass || !confirm) {
+          showMessage('Please fill all password fields', 'error');
+          return;
+        }
+        
+        if (newPass.length < 8) {
+          showMessage('New password must be at least 8 characters', 'error');
+          return;
+        }
+        
+        if (newPass !== confirm) {
+          showMessage('New passwords do not match', 'error');
+          return;
+        }
+        
+        try {
+          const response = await fetch(window.BASE_URL + '/me/password', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+              currentPassword: current,
+              newPassword: newPass
+            })
+          });
+          
+          if (response.ok) {
+            showMessage('Password changed successfully!', 'success');
+            currentPassword.value = '';
+            newPassword.value = '';
+            confirmPassword.value = '';
+          } else {
+            const data = await response.json();
+            showMessage(data.error || 'Failed to change password', 'error');
+          }
+        } catch (error) {
+          console.error('Error changing password:', error);
+          showMessage('Network error. Please try again.', 'error');
+        }
+      }
+      
+      // Event listeners
+      savePrefsBtn.addEventListener('click', savePreferences);
+      cancelPrefsBtn.addEventListener('click', () => {
+        renderPreferences(); // Reset to current
+      });
+      
+      savePasswordBtn.addEventListener('click', changePassword);
+      cancelPasswordBtn.addEventListener('click', () => {
+        currentPassword.value = '';
+        newPassword.value = '';
+        confirmPassword.value = '';
+      });
+      
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem(TOKEN_KEY);
+        window.location.href = 'index.html';
+      });
+      
+      // Initialize
+      loadProfile();
+    });
+  </script>
+</body>
+</html>
