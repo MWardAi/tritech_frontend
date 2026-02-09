@@ -9,11 +9,11 @@ if (window.GPSTracker && window.gpsTracker) {
 class GPSTracker {
   constructor(options = {}) {
     this.options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0,
+      enableHighAccuracy: false,
+      timeout: 30000,
+      maximumAge: 30000,
       updateInterval: 60000, // Update every minute
-      minDistance: 10, // Minimum distance in meters to trigger update
+      minDistance: 20, // Minimum distance in meters to trigger update
       autoStart: false,
       ...options
     };
