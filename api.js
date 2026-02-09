@@ -102,10 +102,23 @@ const api = {
       console.warn('Cannot get token:', err);
       return null;
     }
+  },
+  // Location methods
+  saveLocation: async (locationData, opts = {}) => {
+    return request('POST', '/me/location', locationData, opts);
+  },
+  
+  getLastLocation: async (opts = {}) => {
+    return request('GET', '/me/location/last', null, opts);
+  },
+  
+  getLocations: async (limit = 100, opts = {}) => {
+    return request('GET', `/me/locations?limit=${limit}`, null, opts);
   }
 };
 
 // Attach to window for global access
 if (typeof window !== 'undefined') {
   window.api = api;
+
 }
