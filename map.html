@@ -265,6 +265,39 @@
         </div>
       </div>
     </div>
+    <!-- GPS Tracking Controls -->
+    <div style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.8); border-radius: var(--radius); border: 1px solid rgba(0,0,0,0.06);">
+      <h3 style="margin-top: 0;">GPS Location Tracking</h3>
+      <p class="small" style="margin-bottom: 15px;">
+        Share your location to get personalized recommendations and track your journey.
+        <br><strong>Privacy:</strong> Your location data is stored securely and used only to enhance your experience.
+      </p>
+      
+      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+        <button id="gps-start-btn" class="btn" style="font-size: 14px;">
+          <span style="margin-right: 8px;">📍</span> Start Tracking
+        </button>
+        <button id="gps-stop-btn" class="btn secondary" style="font-size: 14px;" disabled>
+          <span style="margin-right: 8px;">⏸️</span> Stop Tracking
+        </button>
+        <button id="gps-locate-btn" class="btn secondary" style="font-size: 14px;">
+          <span style="margin-right: 8px;">🧭</span> Show My Location
+        </button>
+      </div>
+      
+      <div id="gps-status" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--cream-2); border-radius: 8px; font-size: 13px;">
+        <div id="gps-status-indicator" style="width: 12px; height: 12px; border-radius: 50%; background-color: #ccc;"></div>
+        <span id="gps-status-text">GPS not active</span>
+        <span id="gps-location-info" style="margin-left: auto; font-family: monospace; color: var(--muted);"></span>
+      </div>
+      
+      <div class="small" style="margin-top: 10px; color: var(--muted);">
+        <label>
+          <input type="checkbox" id="gps-auto-start" checked>
+          Auto-start tracking when I log in
+        </label>
+      </div>
+    </div>
   </main>
 
   <!-- Leaflet JS -->
@@ -534,5 +567,209 @@
       });
     });
   </script>
+  <!-- GPS Tracker Script -->
+  <script src="gps-tracker.js"></script>
+  <script>
+    // GPS controls for map page
+    document.addEventListener('DOMContentLoaded', function() {
+      const gpsStartBtn = document.getElementById('gps-start-btn');
+      const gpsStopBtn = document.getElementById('gps-stop-btn');
+      const gpsLocateBtn = document.getElementById('gps-locate-btn');
+      const gpsStatusIndicator = document.getElementById('gps-status-indicator');
+      const gpsStatusText = document.getElementById('gps-status-text');
+      const gpsLocationInfo = document.getElementById('gps-location-info');
+      const gpsAutoStart = document.getElementById('gps-auto-start');
+      
+      let map = null; // Will be set when Leaflet map initializes
+      let userMarker = null;
+      
+      // Update GPS status display
+      function updateGPSStatus(isActive, coords = null) {
+        if (isActive) {
+          gpsStatusIndicator.style.backgroundColor = '#4CAF50';
+          gpsStatusText.textContent = 'Tracking active';
+          gpsStartBtn.disabled = true;
+          gpsStopBtn.disabled = false;
+          
+          if (coords) {
+            gpsLocationInfo.textContent = 
+              `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+            
+            // Update user marker on map
+            updateUserMarker(coords);
+          }
+        } else {
+          gpsStatusIndicator.style.backgroundColor = '#ccc';
+          gpsStatusText.textContent = 'GPS not active';
+          gpsStartBtn.disabled = false;
+          gpsStopBtn.disabled = true;
+          gpsLocationInfo.textContent = '';
+          
+          // Remove user marker
+          if (userMarker) {
+            map.removeLayer(userMarker);
+            userMarker = null;
+          }
+        }
+      }
+      
+      // Update user marker on map
+      function updateUserMarker(coords) {
+        if (!map) return;
+        
+        // Remove existing marker
+        if (userMarker) {
+          map.removeLayer(userMarker);
+        }
+        
+        // Create new marker
+        userMarker = L.marker([coords.latitude, coords.longitude], {
+          icon: L.divIcon({
+            className: 'user-location-marker',
+            html: '<div style="width: 20px; height: 20px; border-radius: 50%; background-color: #6aa6ff; border: 3px solid white; box-shadow: 0 0 10px rgba(106, 166, 255, 0.5);"></div>',
+            iconSize: [20, 20]
+          }),
+          zIndexOffset: 1000
+        }).addTo(map);
+        
+        // Add popup
+        userMarker.bindPopup(`
+          <div style="text-align: center;">
+            <strong>Your Location</strong><br>
+            Accuracy: ${coords.accuracy ? Math.round(coords.accuracy) + 'm' : 'Unknown'}<br>
+            ${coords.speed ? 'Speed: ' + (coords.speed * 3.6).toFixed(1) + ' km/h' : ''}
+          </div>
+        `);
+        
+        // Center map on user if it's their first location
+        if (!window.userLocationCentered) {
+          map.setView([coords.latitude, coords.longitude], 13);
+          window.userLocationCentered = true;
+        }
+      }
+      
+      // Start GPS tracking
+      gpsStartBtn.addEventListener('click', async function() {
+        if (!window.gpsTracker) {
+          alert('GPS tracker not available. Please refresh the page.');
+          return;
+        }
+        
+        const success = await window.gpsTracker.startTracking();
+        updateGPSStatus(success);
+        
+        if (success) {
+          console.log('GPS tracking started successfully');
+        } else {
+          alert('Failed to start GPS tracking. Please check your location permissions.');
+        }
+      });
+      
+      // Stop GPS tracking
+      gpsStopBtn.addEventListener('click', function() {
+        if (window.gpsTracker) {
+          window.gpsTracker.stopTracking();
+          updateGPSStatus(false);
+          console.log('GPS tracking stopped');
+        }
+      });
+      
+      // Locate button - center map on user's current location
+      gpsLocateBtn.addEventListener('click', async function() {
+        if (!window.gpsTracker) return;
+        
+        try {
+          const position = await window.gpsTracker.getCurrentPosition();
+          const coords = position.coords;
+          
+          // Center map on user
+          if (map) {
+            map.setView([coords.latitude, coords.longitude], 15);
+          }
+          
+          // Show temporary marker
+          if (map) {
+            L.marker([coords.latitude, coords.longitude], {
+              icon: L.divIcon({
+                className: 'temp-location-marker',
+                html: '<div style="width: 16px; height: 16px; border-radius: 50%; background-color: #ff6a6a; border: 2px solid white;"></div>',
+                iconSize: [16, 16]
+              })
+            })
+            .addTo(map)
+            .bindPopup('Your current location')
+            .openPopup();
+            
+            // Remove marker after 5 seconds
+            setTimeout(() => {
+              if (map) {
+                map.eachLayer((layer) => {
+                  if (layer.options && layer.options.icon && 
+                      layer.options.icon.options && 
+                      layer.options.icon.options.className === 'temp-location-marker') {
+                    map.removeLayer(layer);
+                  }
+                });
+              }
+            }, 5000);
+          }
+          
+          // Save this location
+          window.gpsTracker.savePositionToBackend(position);
+          
+        } catch (error) {
+          console.error('Failed to get location:', error);
+          alert('Could not get your location. Please check GPS permissions.');
+        }
+      });
+      
+      // Listen for GPS position updates
+      window.addEventListener('gps-position-update', function(event) {
+        const position = event.detail.position;
+        updateGPSStatus(true, position.coords);
+      });
+      
+      // Initialize when map is ready
+      // Add this to the existing map initialization code
+      const originalMapInit = window.map; // Assuming you have a map variable
+      if (originalMapInit) {
+        map = originalMapInit;
+        initGPSControls();
+      }
+      
+      function initGPSControls() {
+        // Check if GPS is already tracking
+        if (window.gpsTracker && window.gpsTracker.isTracking) {
+          updateGPSStatus(true, window.gpsTracker.lastPosition?.coords);
+        }
+        
+        // Load auto-start preference
+        const autoStartPref = localStorage.getItem('gps_auto_start');
+        if (autoStartPref !== null) {
+          gpsAutoStart.checked = autoStartPref === 'true';
+        }
+      }
+      
+      // Save auto-start preference
+      gpsAutoStart.addEventListener('change', function() {
+        localStorage.setItem('gps_auto_start', this.checked.toString());
+      });
+      
+      // Add CSS for markers
+      const style = document.createElement('style');
+      style.textContent = `
+        .user-location-marker {
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.7; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+    });
+  </script>
 </body>
+
 </html>
