@@ -303,6 +303,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show success message
         showMessage('Login successful!', 'success', 2000);
+
+        // Request GPS permission if consented
+        setTimeout(() => {
+          const locationConsent = localStorage.getItem('location_consent') !== 'false';
+          if (locationConsent && window.gpsTracker && navigator.geolocation) {
+            window.gpsTracker.startTracking().catch(err => {
+              console.log('GPS tracking not started:', err.message);
+            });
+          }
+        }, 1000);
         
         // Update profile view
         if (elements.profileUsername && response.user) {
@@ -428,4 +438,5 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Start the app
   init();
+
 });
