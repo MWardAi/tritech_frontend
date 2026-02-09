@@ -531,6 +531,19 @@
           <div id="signup-success-hint" class="small" style="display:none;margin-top:8px;color:var(--muted);">
             Account created. Please log in to continue.
           </div>
+          <!-- Add this after the preferences section in the signup form -->
+          <div class="small" style="margin-top: 12px; padding: 10px; background: rgba(106,166,255,0.05); border-radius: 8px; border: 1px solid rgba(106,166,255,0.1);">
+            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="location-consent" style="margin-top: 2px;" checked>
+              <div>
+                <strong>Location Services</strong><br>
+                I consent to share my GPS location to receive personalized recommendations and improve my experience.
+                <span style="display: block; margin-top: 4px; color: var(--muted);">
+                  You can enable/disable this anytime in settings. Location data is stored securely and anonymized for analytics.
+                </span>
+              </div>
+            </label>
+          </div>
          </form>
         <!-- Login Form -->
         <form id="login-form" style="display:none;" novalidate>
@@ -686,6 +699,9 @@
       </div>
     </div>
   </div>
+  <!-- Add GPS tracker script -->
+  <script src="gps-tracker.js"></script>
 
 </body>
 </html>
+
