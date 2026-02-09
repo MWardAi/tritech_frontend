@@ -1,7 +1,11 @@
 /**
  * gps-tracker.js - GPS location tracking for SmartTourist
  */
-
+// Prevent duplicate declaration
+if (window.GPSTracker && window.gpsTracker) {
+  console.log('GPS Tracker already initialized');
+  throw new Error('GPSTracker already declared');
+}
 class GPSTracker {
   constructor(options = {}) {
     this.options = {
@@ -178,15 +182,16 @@ class GPSTracker {
   // Save position to backend
   async savePositionToBackend(position) {
     try {
+      // In the savePositionToBackend method, update the locationData object:
       const locationData = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-        altitude: position.coords.altitude,
-        altitudeAccuracy: position.coords.altitudeAccuracy,
-        heading: position.coords.heading,
-        speed: position.coords.speed,
-        timestamp: position.timestamp
+        accuracy: position.coords.accuracy || null,
+        altitude: position.coords.altitude || null,
+        altitudeAccuracy: position.coords.altitudeAccuracy || null,
+        heading: position.coords.heading || null,
+        speed: position.coords.speed || null,
+        timestamp: position.timestamp || Date.now()
       };
       
       const response = await window.api.saveLocation(locationData);
@@ -273,29 +278,26 @@ class GPSTracker {
   }
 }
 
-// Create global instance
-window.gpsTracker = new GPSTracker({
-  enableHighAccuracy: true,
-  timeout: 10000,
-  maximumAge: 0,
-  updateInterval: 60000, // 1 minute
-  minDistance: 10, // 10 meters
-  autoStart: false
-});
-
-// Initialize on load
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.gpsTracker) {
-    window.gpsTracker.initialize().then(initialized => {
-      console.log('GPS Tracker initialized:', initialized);
-      
-      // Auto-start if user is logged in
-      const token = localStorage.getItem('st_token');
-      if (token && initialized) {
-        window.gpsTracker.startTracking().then(success => {
-          console.log('Auto-started GPS tracking:', success);
-        });
-      }
-    });
-  }
-});
+// At the end of gps-tracker.js, replace with:
+// Create global instance if it doesn't exist
+// At the end of gps-tracker.js, replace with:
+// Create global instance if it doesn't exist
+if (!window.gpsTracker) {
+  window.gpsTracker = new GPSTracker({
+    enableHighAccuracy: false, // Change to false to reduce timeout errors
+    timeout: 15000, // Increase timeout
+    maximumAge: 30000, // Accept cached positions up to 30 seconds old
+    updateInterval: 30000, // Update every 30 seconds
+    minDistance: 20, // Minimum distance in meters to trigger update
+    autoStart: false
+  });
+  
+  // Initialize when DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.gpsTracker) {
+      window.gpsTracker.initialize().then(initialized => {
+        console.log('GPS Tracker initialized:', initialized);
+      });
+    }
+  });
+}
