@@ -197,6 +197,44 @@
       display: inline-block;
       margin-right: 4px;
     }
+    /* Add these styles to your existing CSS in map.html */
+
+    /* Pulse animation for user marker */
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        opacity: 0.7;
+      }
+      50% {
+        transform: scale(1.05);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(0.95);
+        opacity: 0.7;
+      }
+    }
+    
+    /* Custom marker styles */
+    .user-location-marker {
+      animation: pulse 2s infinite;
+    }
+    
+    /* Country flag styles in legend */
+    .country-flag {
+      font-size: 20px;
+      margin-right: 5px;
+    }
+    
+    /* User info window styles */
+    .user-info-window {
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      border: 2px solid #6aa6ff;
+      min-width: 200px;
+    }
 
     @media (max-width: 768px) {
       #map-container {
@@ -250,6 +288,7 @@
     <div id="map-container">
       <!-- Map will be rendered here -->
       <div class="map-title">🗺️ Damascus, Syria</div>
+      <!-- Update the map-legend div to include user location -->
       <div class="map-legend">
         <div class="legend-item">
           <span class="legend-color" style="background-color: #6aa6ff;"></span>
@@ -262,6 +301,24 @@
         <div class="legend-item">
           <span class="legend-color" style="background-color: #4bff8b;"></span>
           <span>Cultural Site</span>
+        </div>
+        <div class="legend-item" id="user-location-legend" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="
+              width: 16px;
+              height: 16px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, #6aa6ff, #4b8bff);
+              border: 2px solid white;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <div style="font-size: 8px; color: white; font-weight: bold;">U</div>
+            </div>
+            <span>Your Location</span>
+          </div>
         </div>
       </div>
     </div>
@@ -282,6 +339,10 @@
         </button>
         <button id="gps-locate-btn" class="btn secondary" style="font-size: 14px;">
           <span style="margin-right: 8px;">🧭</span> Show My Location
+        </button>
+        <!-- Add this button with the other GPS buttons -->
+        <button id="gps-focus-btn" class="btn secondary" style="font-size: 14px;">
+          <span style="margin-right: 8px;">🎯</span> Focus on Me
         </button>
       </div>
       
@@ -320,6 +381,9 @@
       }
       
       // Load user profile
+      // Update the loadProfile function to store user data
+      let userProfile = null; // Add this at the top of your script
+      
       async function loadProfile() {
         try {
           const response = await fetch(window.BASE_URL + '/me', {
@@ -331,8 +395,14 @@
           if (response.ok) {
             const data = await response.json();
             if (data.user) {
+              userProfile = data.user; // Store user profile globally
               updateProfileDisplay(data.user);
               initProfileEvents();
+              
+              // If GPS is tracking, update the marker with user info
+              if (window.gpsTracker && window.gpsTracker.lastPosition) {
+                updateUserMarker(window.gpsTracker.lastPosition.coords);
+              }
             }
           } else {
             // Token might be invalid, redirect to login
@@ -343,7 +413,6 @@
           console.error('Failed to load profile:', error);
         }
       }
-      
       // Update profile display
       function updateProfileDisplay(user) {
         const navProfile = document.getElementById('nav-profile');
@@ -584,6 +653,7 @@
       let userMarker = null;
       
       // Update GPS status display
+      // Update the updateGPSStatus function
       function updateGPSStatus(isActive, coords = null) {
         if (isActive) {
           gpsStatusIndicator.style.backgroundColor = '#4CAF50';
@@ -591,9 +661,25 @@
           gpsStartBtn.disabled = true;
           gpsStopBtn.disabled = false;
           
+          // Show user location in legend
+          const userLegend = document.getElementById('user-location-legend');
+          if (userLegend) userLegend.style.display = 'flex';
+          
           if (coords) {
-            gpsLocationInfo.textContent = 
-              `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+            // Get user info for display
+            const userName = userProfile ? userProfile.username : 'You';
+            const userCountry = userProfile ? userProfile.country : '';
+            const flagEmoji = getFlagEmoji(userCountry);
+            
+            gpsLocationInfo.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 16px;">${flagEmoji}</span>
+                <span style="font-weight: 600;">${userName}</span>
+                <span style="color: var(--muted); font-size: 12px;">
+                  ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}
+                </span>
+              </div>
+            `;
             
             // Update user marker on map
             updateUserMarker(coords);
@@ -605,6 +691,10 @@
           gpsStopBtn.disabled = true;
           gpsLocationInfo.textContent = '';
           
+          // Hide user location in legend
+          const userLegend = document.getElementById('user-location-legend');
+          if (userLegend) userLegend.style.display = 'none';
+          
           // Remove user marker
           if (userMarker) {
             map.removeLayer(userMarker);
@@ -613,7 +703,7 @@
         }
       }
       
-      // Update user marker on map
+      // Replace the existing updateUserMarker function with this enhanced version
       function updateUserMarker(coords) {
         if (!map) return;
         
@@ -622,32 +712,212 @@
           map.removeLayer(userMarker);
         }
         
-        // Create new marker
+        // Get user data
+        const userName = userProfile ? userProfile.username : 'You';
+        const userCountry = userProfile ? userProfile.country : 'Unknown';
+        
+        // Get flag emoji based on country
+        const flagEmoji = getFlagEmoji(userCountry);
+        
+        // Create custom marker icon
+        const userMarkerIcon = L.divIcon({
+          className: 'user-location-marker',
+          html: `
+            <div style="
+              position: relative;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 50px;
+              height: 50px;
+            ">
+              <!-- Outer circle with pulse animation -->
+              <div style="
+                position: absolute;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background: rgba(106, 166, 255, 0.2);
+                animation: pulse 2s infinite;
+              "></div>
+              
+              <!-- Inner circle with user info -->
+              <div style="
+                position: relative;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #6aa6ff, #4b8bff);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                overflow: hidden;
+                z-index: 10;
+              ">
+                <!-- Flag emoji -->
+                <div style="
+                  font-size: 18px;
+                  line-height: 1;
+                  margin-bottom: 2px;
+                ">${flagEmoji}</div>
+                
+                <!-- Initial or name -->
+                <div style="
+                  font-size: 10px;
+                  font-weight: bold;
+                  color: white;
+                  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+                  max-width: 36px;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                  padding: 0 2px;
+                ">${getUserInitial(userName)}</div>
+              </div>
+              
+              <!-- Tooltip triangle -->
+              <div style="
+                position: absolute;
+                top: 42px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 0;
+                height: 0;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 8px solid #6aa6ff;
+                z-index: 5;
+              "></div>
+            </div>
+          `,
+          iconSize: [50, 58], // Increased height to accommodate tooltip
+          iconAnchor: [25, 50], // Anchor at bottom center
+          popupAnchor: [0, -50] // Popup above marker
+        });
+        
+        // Create marker with enhanced icon
         userMarker = L.marker([coords.latitude, coords.longitude], {
-          icon: L.divIcon({
-            className: 'user-location-marker',
-            html: '<div style="width: 20px; height: 20px; border-radius: 50%; background-color: #6aa6ff; border: 3px solid white; box-shadow: 0 0 10px rgba(106, 166, 255, 0.5);"></div>',
-            iconSize: [20, 20]
-          }),
-          zIndexOffset: 1000
+          icon: userMarkerIcon,
+          zIndexOffset: 1000,
+          title: `${userName}'s location`
         }).addTo(map);
         
-        // Add popup
-        userMarker.bindPopup(`
-          <div style="text-align: center;">
-            <strong>Your Location</strong><br>
-            Accuracy: ${coords.accuracy ? Math.round(coords.accuracy) + 'm' : 'Unknown'}<br>
-            ${coords.speed ? 'Speed: ' + (coords.speed * 3.6).toFixed(1) + ' km/h' : ''}
+        // Enhanced popup content
+        const popupContent = `
+          <div style="
+            min-width: 180px;
+            padding: 12px;
+            text-align: center;
+          ">
+            <div style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              margin-bottom: 10px;
+              justify-content: center;
+            ">
+              <div style="
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #6aa6ff, #4b8bff);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid white;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+              ">
+                <div style="font-size: 16px;">${flagEmoji}</div>
+                <div style="font-size: 10px; color: white; font-weight: bold;">
+                  ${getUserInitial(userName)}
+                </div>
+              </div>
+              
+              <div style="text-align: left;">
+                <div style="font-weight: 800; font-size: 16px; color: #1b1b1b;">
+                  ${userName}
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #7b7b7b;">
+                  <span style="font-size: 16px;">${flagEmoji}</span>
+                  <span>${userCountry}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="
+              background: var(--cream-2);
+              border-radius: 8px;
+              padding: 8px;
+              margin: 8px 0;
+              font-size: 12px;
+            ">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <div>
+                  <div style="color: var(--muted); font-size: 11px;">Latitude</div>
+                  <div style="font-weight: 600; font-family: monospace;">
+                    ${coords.latitude.toFixed(6)}
+                  </div>
+                </div>
+                <div>
+                  <div style="color: var(--muted); font-size: 11px;">Longitude</div>
+                  <div style="font-weight: 600; font-family: monospace;">
+                    ${coords.longitude.toFixed(6)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="font-size: 12px; color: var(--muted);">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span>Accuracy:</span>
+                <span style="font-weight: 600;">${coords.accuracy ? Math.round(coords.accuracy) + ' m' : 'Unknown'}</span>
+              </div>
+              ${coords.speed ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span>Speed:</span>
+                <span style="font-weight: 600;">${(coords.speed * 3.6).toFixed(1)} km/h</span>
+              </div>
+              ` : ''}
+              <div style="display: flex; justify-content: space-between;">
+                <span>Updated:</span>
+                <span style="font-weight: 600;">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              </div>
+            </div>
           </div>
-        `);
+        `;
+        
+        // Bind popup
+        userMarker.bindPopup(popupContent);
         
         // Center map on user if it's their first location
         if (!window.userLocationCentered) {
-          map.setView([coords.latitude, coords.longitude], 13);
+          map.setView([coords.latitude, coords.longitude], 15);
           window.userLocationCentered = true;
         }
       }
       
+      // Add these helper functions to get flag emoji and user initial
+      function getFlagEmoji(countryName) {
+        const flagMap = {
+          'Syria': '🇸🇾',
+          'Lebanon': '🇱🇧', 
+          'Jordan': '🇯🇴',
+          'Iraq': '🇮🇶',
+          'Egypt': '🇪🇬',
+          'Turkey': '🇹🇷',
+          'Other': '🏳️'
+        };
+        return flagMap[countryName] || '📍';
+      }
+      
+      function getUserInitial(name) {
+        if (!name) return '?';
+        return name.charAt(0).toUpperCase();
+      }
       // Start GPS tracking
       gpsStartBtn.addEventListener('click', async function() {
         if (!window.gpsTracker) {
@@ -664,6 +934,32 @@
           alert('Failed to start GPS tracking. Please check your location permissions.');
         }
       });
+
+      //
+      // Add this with the other button event listeners
+      const gpsFocusBtn = document.getElementById('gps-focus-btn');
+      if (gpsFocusBtn) {
+        gpsFocusBtn.addEventListener('click', function() {
+          if (userMarker && map) {
+            // Fly to user location
+            const latLng = userMarker.getLatLng();
+            map.flyTo(latLng, 16, {
+              duration: 1.5
+            });
+            
+            // Open user's popup
+            setTimeout(() => {
+              userMarker.openPopup();
+            }, 1500);
+          } else if (window.gpsTracker && window.gpsTracker.lastPosition) {
+            // Center on last known position
+            const coords = window.gpsTracker.lastPosition.coords;
+            map.flyTo([coords.latitude, coords.longitude], 16, {
+              duration: 1.5
+            });
+          }
+        });
+      }
       
       // Stop GPS tracking
       gpsStopBtn.addEventListener('click', function() {
@@ -675,6 +971,7 @@
       });
       
       // Locate button - center map on user's current location
+      // Update the locate button click handler
       gpsLocateBtn.addEventListener('click', async function() {
         if (!window.gpsTracker) return;
         
@@ -682,34 +979,79 @@
           const position = await window.gpsTracker.getCurrentPosition();
           const coords = position.coords;
           
+          // Get user info
+          const userName = userProfile ? userProfile.username : 'You';
+          const userCountry = userProfile ? userProfile.country : '';
+          const flagEmoji = getFlagEmoji(userCountry);
+          
           // Center map on user
           if (map) {
             map.setView([coords.latitude, coords.longitude], 15);
           }
           
-          // Show temporary marker
+          // Create enhanced temporary marker
           if (map) {
-            L.marker([coords.latitude, coords.longitude], {
-              icon: L.divIcon({
-                className: 'temp-location-marker',
-                html: '<div style="width: 16px; height: 16px; border-radius: 50%; background-color: #ff6a6a; border: 2px solid white;"></div>',
-                iconSize: [16, 16]
-              })
+            const tempMarkerIcon = L.divIcon({
+              className: 'temp-location-marker',
+              html: `
+                <div style="
+                  position: relative;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  width: 40px;
+                  height: 40px;
+                ">
+                  <div style="
+                    position: absolute;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: rgba(255, 106, 106, 0.3);
+                  "></div>
+                  <div style="
+                    position: relative;
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #ff6a6a, #ff4b4b);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    border: 2px solid white;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                  ">
+                    <div style="font-size: 14px;">${flagEmoji}</div>
+                  </div>
+                </div>
+              `,
+              iconSize: [40, 40],
+              iconAnchor: [20, 20]
+            });
+            
+            const tempMarker = L.marker([coords.latitude, coords.longitude], {
+              icon: tempMarkerIcon
             })
             .addTo(map)
-            .bindPopup('Your current location')
+            .bindPopup(`
+              <div style="text-align: center; min-width: 150px;">
+                <div style="font-weight: 800; margin-bottom: 5px;">${userName}'s Location</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 8px;">
+                  <span style="font-size: 18px;">${flagEmoji}</span>
+                  <span>${userCountry}</span>
+                </div>
+                <div style="font-size: 11px; color: var(--muted);">
+                  ${new Date().toLocaleTimeString()}
+                </div>
+              </div>
+            `)
             .openPopup();
             
             // Remove marker after 5 seconds
             setTimeout(() => {
-              if (map) {
-                map.eachLayer((layer) => {
-                  if (layer.options && layer.options.icon && 
-                      layer.options.icon.options && 
-                      layer.options.icon.options.className === 'temp-location-marker') {
-                    map.removeLayer(layer);
-                  }
-                });
+              if (map && tempMarker) {
+                map.removeLayer(tempMarker);
               }
             }, 5000);
           }
@@ -722,7 +1064,6 @@
           alert('Could not get your location. Please check GPS permissions.');
         }
       });
-      
       // Listen for GPS position updates
       window.addEventListener('gps-position-update', function(event) {
         const position = event.detail.position;
@@ -775,4 +1116,5 @@
 </body>
 
 </html>
+
 
