@@ -853,6 +853,8 @@
       // Initialize map
       function initMap() {
         map = L.map('map-container').setView([33.5138, 36.2765], 13);
+
+        window.map = map; // Add this line
         
         // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -936,14 +938,14 @@
       // Clear recommendation markers
       function clearRecommendationMarkers() {
         recommendationMarkers.forEach(marker => {
-          if (map && marker) map.removeLayer(marker);
+          if (window.map && marker) map.removeLayer(marker);
         });
         recommendationMarkers = [];
       }
       
       // Add recommendation marker to map
       function addRecommendationMarker(place) {
-        if (!map) return;
+        if (!window.map) return;
         
         const score = place.score || 0.5;
         const color = getRecommendationColor(score);
@@ -1017,7 +1019,7 @@
         const marker = L.marker([place.latitude, place.longitude], {
           icon: recommendationIcon,
           zIndexOffset: 900
-        }).addTo(map);
+        }).addTo(window.map);
         
         // Enhanced popup for recommendations
         const popupContent = `
@@ -1272,7 +1274,7 @@
         // Fit map to show all recommendation markers
         if (recommendationMarkers.length > 0) {
           const group = L.featureGroup(recommendationMarkers);
-          map.fitBounds(group.getBounds().pad(0.1));
+          window.map.fitBounds(group.getBounds().pad(0.1));
         }
       }
       
@@ -1287,7 +1289,7 @@
         const marker = addRecommendationMarker(place);
         
         // Center map on this place
-        map.setView([place.latitude, place.longitude], 16);
+        window.map.setView([place.latitude, place.longitude], 16);
         
         // Open popup
         setTimeout(() => {
@@ -1303,7 +1305,7 @@
         clearRecommendationMarkers();
         const marker = addRecommendationMarker(place);
         
-        map.setView([place.latitude, place.longitude], 16);
+        window.map.setView([place.latitude, place.longitude], 16);
         setTimeout(() => {
           if (marker) marker.openPopup();
         }, 500);
@@ -1386,4 +1388,5 @@
   </script>
 </body>
 </html>
+
 
