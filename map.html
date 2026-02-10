@@ -305,6 +305,32 @@
         </label>
       </div>
     </div>
+    <!-- Recommendations Section -->
+    <div id="recommendations-section" style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.8); border-radius: var(--radius); border: 1px solid rgba(0,0,0,0.06);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0;">Personalized Recommendations</h3>
+        <div style="display: flex; gap: 10px;">
+          <button id="refresh-recommendations" class="btn secondary" style="font-size: 14px;">
+            <span style="margin-right: 8px;">🔄</span> Refresh
+          </button>
+          <button id="show-all-recommendations" class="btn" style="font-size: 14px;">
+            <span style="margin-right: 8px;">🌟</span> Show on Map
+          </button>
+        </div>
+      </div>
+      
+      <div id="recommendations-loading" style="display: none; text-align: center; padding: 20px;">
+        <div class="small">Loading recommendations...</div>
+      </div>
+      
+      <div id="recommendations-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px;">
+        <!-- Recommendations will be loaded here -->
+      </div>
+      
+      <div id="no-recommendations" style="display: none; text-align: center; padding: 20px; background: var(--cream-2); border-radius: 8px;">
+        <p class="small">No recommendations available. Please enable GPS tracking for personalized recommendations.</p>
+      </div>
+    </div>
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -894,6 +920,470 @@
       // Start everything when DOM is loaded
       document.addEventListener('DOMContentLoaded', init);
     })();
+    // Recommendation system
+    (function() {
+      let recommendationMarkers = [];
+      let currentRecommendations = [];
+      
+      // Recommendation marker colors based on score
+      const getRecommendationColor = (score) => {
+        if (score >= 0.8) return '#4CAF50'; // Green
+        if (score >= 0.6) return '#FFC107'; // Yellow
+        if (score >= 0.4) return '#FF9800'; // Orange
+        return '#F44336'; // Red
+      };
+      
+      // Clear recommendation markers
+      function clearRecommendationMarkers() {
+        recommendationMarkers.forEach(marker => {
+          if (map && marker) map.removeLayer(marker);
+        });
+        recommendationMarkers = [];
+      }
+      
+      // Add recommendation marker to map
+      function addRecommendationMarker(place) {
+        if (!map) return;
+        
+        const score = place.score || 0.5;
+        const color = getRecommendationColor(score);
+        
+        const recommendationIcon = L.divIcon({
+          className: 'recommendation-marker',
+          html: `
+            <div style="
+              position: relative;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 48px;
+              height: 48px;
+            ">
+              <!-- Outer glow -->
+              <div style="
+                position: absolute;
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background: ${color}20;
+                animation: pulse 2s infinite;
+              "></div>
+              
+              <!-- Star background -->
+              <div style="
+                position: relative;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                background: ${color};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid white;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10;
+              ">
+                <!-- Star emoji -->
+                <div style="font-size: 16px; color: white;">🌟</div>
+                
+                <!-- Score badge -->
+                <div style="
+                  position: absolute;
+                  bottom: -8px;
+                  right: -8px;
+                  width: 24px;
+                  height: 24px;
+                  border-radius: 50%;
+                  background: white;
+                  border: 2px solid ${color};
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 10px;
+                  font-weight: bold;
+                  color: ${color};
+                  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                ">
+                  ${Math.round(score * 100)}
+                </div>
+              </div>
+            </div>
+          `,
+          iconSize: [48, 48],
+          iconAnchor: [24, 48],
+          popupAnchor: [0, -48]
+        });
+        
+        const marker = L.marker([place.latitude, place.longitude], {
+          icon: recommendationIcon,
+          zIndexOffset: 900
+        }).addTo(map);
+        
+        // Enhanced popup for recommendations
+        const popupContent = `
+          <div style="min-width: 280px; max-width: 320px; padding: 16px;">
+            <!-- Header with score -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0; font-size: 18px; color: #1b1b1b;">${place.name}</h3>
+              <div style="
+                padding: 4px 8px;
+                background: ${color}20;
+                color: ${color};
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: bold;
+              ">
+                ${Math.round(score * 100)}% match
+              </div>
+            </div>
+            
+            <!-- Basic info -->
+            <div style="margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="font-size: 14px; color: #7b7b7b;">📍 ${place.distance_km ? place.distance_km.toFixed(1) + ' km away' : 'Nearby'}</span>
+                <span style="font-size: 14px; color: #7b7b7b;">💰 ${place.price_category || 'Medium'}</span>
+                <span style="font-size: 14px; color: #7b7b7b;">⭐ ${place.rating || 'N/A'}/5</span>
+              </div>
+              <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #444;">
+                ${place.description || 'No description available.'}
+              </p>
+            </div>
+            
+            <!-- Score breakdown -->
+            ${place.scores ? `
+            <div style="background: var(--cream-2); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px;">Score Breakdown</div>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; font-size: 11px;">
+                ${place.scores.preference !== undefined ? `
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Preference:</span>
+                  <span style="font-weight: 600;">${(place.scores.preference * 100).toFixed(0)}%</span>
+                </div>
+                ` : ''}
+                ${place.scores.distance !== undefined ? `
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Distance:</span>
+                  <span style="font-weight: 600;">${(place.scores.distance * 100).toFixed(0)}%</span>
+                </div>
+                ` : ''}
+                ${place.scores.budget !== undefined ? `
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Budget:</span>
+                  <span style="font-weight: 600;">${(place.scores.budget * 100).toFixed(0)}%</span>
+                </div>
+                ` : ''}
+                ${place.scores.popularity !== undefined ? `
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Popularity:</span>
+                  <span style="font-weight: 600;">${(place.scores.popularity * 100).toFixed(0)}%</span>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+            ` : ''}
+            
+            <!-- Tags -->
+            ${place.tags && place.tags.length > 0 ? `
+            <div style="margin-bottom: 12px;">
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                ${place.tags.map(tag => `
+                  <span style="
+                    padding: 4px 8px;
+                    background: rgba(106, 166, 255, 0.1);
+                    color: var(--accent);
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: 600;
+                  ">${tag}</span>
+                `).join('')}
+              </div>
+            </div>
+            ` : ''}
+            
+            <!-- Actions -->
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <button onclick="trackPlaceActivity('${place.id}', 'viewed')" style="
+                flex: 1;
+                padding: 8px 12px;
+                background: var(--cream-2);
+                border: 1px solid rgba(0,0,0,0.08);
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 600;
+                color: #444;
+                cursor: pointer;
+              ">
+                👁️ View Details
+              </button>
+              <button onclick="markAsVisited('${place.id}')" style="
+                flex: 1;
+                padding: 8px 12px;
+                background: var(--accent);
+                border: none;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 600;
+                color: white;
+                cursor: pointer;
+              ">
+                ✅ Mark Visited
+              </button>
+            </div>
+          </div>
+        `;
+        
+        marker.bindPopup(popupContent);
+        
+        // Track when user clicks on recommendation
+        marker.on('popupopen', () => {
+          trackPlaceActivity(place.id, 'clicked');
+        });
+        
+        recommendationMarkers.push(marker);
+        return marker;
+      }
+      
+      // Load recommendations from backend
+      async function loadRecommendations() {
+        const loadingEl = document.getElementById('recommendations-loading');
+        const listEl = document.getElementById('recommendations-list');
+        const noRecEl = document.getElementById('no-recommendations');
+        
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (listEl) listEl.innerHTML = '';
+        if (noRecEl) noRecEl.style.display = 'none';
+        
+        try {
+          const token = localStorage.getItem('st_token');
+          const response = await fetch(`${window.BASE_URL}/me/recommendations`, {
+            headers: {
+              'Authorization': 'Bearer ' + token
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch recommendations');
+          }
+          
+          const data = await response.json();
+          currentRecommendations = data.recommendations || [];
+          
+          if (loadingEl) loadingEl.style.display = 'none';
+          
+          if (currentRecommendations.length === 0) {
+            if (noRecEl) noRecEl.style.display = 'block';
+            return;
+          }
+          
+          // Display recommendations in list
+          if (listEl) {
+            listEl.innerHTML = currentRecommendations.map((place, index) => {
+              const score = place.score || 0.5;
+              const color = getRecommendationColor(score);
+              
+              return `
+                <div class="recommendation-card" style="
+                  background: white;
+                  border-radius: 12px;
+                  padding: 16px;
+                  border: 1px solid rgba(0,0,0,0.06);
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                  transition: transform 0.2s ease;
+                  cursor: pointer;
+                " onclick="focusOnRecommendation(${index})" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <div>
+                      <div style="font-weight: 800; font-size: 16px; color: #1b1b1b; margin-bottom: 4px;">${place.name}</div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 12px; color: #7b7b7b;">${place.category || 'Attraction'}</span>
+                        <span style="font-size: 12px; color: #7b7b7b;">•</span>
+                        <span style="font-size: 12px; color: #7b7b7b;">${place.distance_km ? place.distance_km.toFixed(1) + ' km' : 'Nearby'}</span>
+                      </div>
+                    </div>
+                    <div style="
+                      padding: 4px 8px;
+                      background: ${color}20;
+                      color: ${color};
+                      border-radius: 12px;
+                      font-size: 12px;
+                      font-weight: bold;
+                    ">
+                      ${Math.round(score * 100)}%
+                    </div>
+                  </div>
+                  
+                  <p style="
+                    font-size: 13px;
+                    color: #666;
+                    line-height: 1.5;
+                    margin-bottom: 12px;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                  ">${place.description || ''}</p>
+                  
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 12px; color: #7b7b7b;">💰 ${place.price_category || 'Medium'}</span>
+                      <span style="font-size: 12px; color: #7b7b7b;">⭐ ${place.rating || 'N/A'}/5</span>
+                    </div>
+                    <button onclick="event.stopPropagation(); showOnMap('${place.id}')" style="
+                      padding: 6px 12px;
+                      background: var(--accent);
+                      border: none;
+                      border-radius: 8px;
+                      font-size: 12px;
+                      font-weight: 600;
+                      color: white;
+                      cursor: pointer;
+                    ">
+                      Show on Map
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+          
+        } catch (error) {
+          console.error('Error loading recommendations:', error);
+          if (loadingEl) loadingEl.style.display = 'none';
+          if (noRecEl) {
+            noRecEl.innerHTML = '<p class="small">Failed to load recommendations. Please try again later.</p>';
+            noRecEl.style.display = 'block';
+          }
+        }
+      }
+      
+      // Show all recommendations on map
+      function showAllRecommendationsOnMap() {
+        clearRecommendationMarkers();
+        
+        if (!currentRecommendations.length) {
+          alert('No recommendations available. Please refresh first.');
+          return;
+        }
+        
+        currentRecommendations.forEach(place => {
+          addRecommendationMarker(place);
+        });
+        
+        // Fit map to show all recommendation markers
+        if (recommendationMarkers.length > 0) {
+          const group = L.featureGroup(recommendationMarkers);
+          map.fitBounds(group.getBounds().pad(0.1));
+        }
+      }
+      
+      // Focus on a specific recommendation
+      window.focusOnRecommendation = function(index) {
+        if (!currentRecommendations[index]) return;
+        
+        const place = currentRecommendations[index];
+        
+        // Clear existing markers and show only this one
+        clearRecommendationMarkers();
+        const marker = addRecommendationMarker(place);
+        
+        // Center map on this place
+        map.setView([place.latitude, place.longitude], 16);
+        
+        // Open popup
+        setTimeout(() => {
+          if (marker) marker.openPopup();
+        }, 500);
+      };
+      
+      // Show single place on map
+      window.showOnMap = function(placeId) {
+        const place = currentRecommendations.find(p => p.id === placeId);
+        if (!place) return;
+        
+        clearRecommendationMarkers();
+        const marker = addRecommendationMarker(place);
+        
+        map.setView([place.latitude, place.longitude], 16);
+        setTimeout(() => {
+          if (marker) marker.openPopup();
+        }, 500);
+      };
+      
+      // Track user activity for a place
+      window.trackPlaceActivity = async function(placeId, activityType) {
+        try {
+          const token = localStorage.getItem('st_token');
+          await fetch(`${window.BASE_URL}/me/activity`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+              place_id: placeId,
+              activity_type: activityType,
+              metadata: { timestamp: new Date().toISOString() }
+            })
+          });
+        } catch (error) {
+          console.error('Error tracking activity:', error);
+        }
+      };
+      
+      // Mark place as visited
+      window.markAsVisited = async function(placeId) {
+        if (!confirm('Mark this place as visited?')) return;
+        
+        try {
+          const token = localStorage.getItem('st_token');
+          await fetch(`${window.BASE_URL}/me/visited`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+              place_id: placeId,
+              timestamp: new Date().toISOString()
+            })
+          });
+          
+          alert('Place marked as visited! Your future recommendations will be updated.');
+          
+          // Refresh recommendations
+          loadRecommendations();
+          
+        } catch (error) {
+          console.error('Error marking as visited:', error);
+          alert('Failed to mark as visited. Please try again.');
+        }
+      };
+      
+      // Initialize recommendation system when page loads
+      document.addEventListener('DOMContentLoaded', function() {
+        const refreshBtn = document.getElementById('refresh-recommendations');
+        const showAllBtn = document.getElementById('show-all-recommendations');
+        
+        if (refreshBtn) {
+          refreshBtn.addEventListener('click', loadRecommendations);
+        }
+        
+        if (showAllBtn) {
+          showAllBtn.addEventListener('click', showAllRecommendationsOnMap);
+        }
+        
+        // Auto-load recommendations after a short delay
+        setTimeout(loadRecommendations, 2000);
+      });
+      
+      // Export functions to global scope
+      window.recommendationSystem = {
+        loadRecommendations,
+        showAllRecommendationsOnMap,
+        clearRecommendationMarkers
+      };
+    })();
   </script>
 </body>
 </html>
+
