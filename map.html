@@ -290,6 +290,9 @@
         <button id="gps-focus-btn" class="btn secondary" style="font-size: 14px;" disabled>
           <span style="margin-right: 8px;">🎯</span> Focus on Me
         </button>
+        <button id="gps-share-btn" class="btn secondary" style="font-size: 14px;">
+          <span style="margin-right: 8px;">🌍</span> Share My Location
+        </button>
       </div>
       
       <div id="gps-status" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--cream-2); border-radius: 8px; font-size: 13px;">
@@ -350,7 +353,7 @@
       let map = null;
       let userMarker = null;
       let attractions = [];
-      
+      let isSharing = false; // default
       // Redirect if not authenticated
       if (!token) {
         window.location.href = 'index.html';
@@ -551,6 +554,57 @@
             alert('Failed to start GPS tracking. Please check your location permissions.');
           }
         });
+
+        // Share location button
+        const shareBtn = document.getElementById('gps-share-btn');
+        if (shareBtn) {
+          // Load current sharing status from backend
+          async function loadSharingStatus() {
+            try {
+              const response = await window.api.get('/me/share-location');
+              if (response && typeof response.share === 'boolean') {
+                isSharing = response.share;
+                updateShareButton();
+              }
+            } catch (err) {
+              console.warn('Could not load sharing status:', err);
+            }
+          }
+          
+          function updateShareButton() {
+            if (isSharing) {
+              shareBtn.style.background = 'linear-gradient(90deg, var(--accent), #4b8bff)';
+              shareBtn.style.color = 'white';
+              shareBtn.innerHTML = '<span style="margin-right: 8px;">🌍</span> Sharing On';
+            } else {
+              shareBtn.style.background = 'transparent';
+              shareBtn.style.color = 'var(--accent)';
+              shareBtn.style.border = '1px solid rgba(106,166,255,0.12)';
+              shareBtn.innerHTML = '<span style="margin-right: 8px;">🌍</span> Share My Location';
+            }
+          }
+        
+          shareBtn.addEventListener('click', async () => {
+            if (!window.gpsTracker || !window.gpsTracker.lastPosition) {
+              alert('Please start GPS tracking before sharing your location.');
+              return;
+            }
+            const newState = !isSharing;
+            try {
+              const response = await window.api.patch('/me/share-location', { share: newState });
+              if (response && response.share !== undefined) {
+                isSharing = response.share;
+                updateShareButton();
+                showMessage(`Location sharing ${isSharing ? 'enabled' : 'disabled'}`, 'success', 2000);
+              }
+            } catch (err) {
+              console.error('Failed to update sharing preference:', err);
+              alert('Could not update sharing preference. Please try again.');
+            }
+          });
+        
+          loadSharingStatus();
+        }
         
         // Stop GPS tracking
         gpsStopBtn.addEventListener('click', function() {
@@ -735,6 +789,74 @@
           });
         }
       }
+
+      let publicUserMarkers = [];
+
+      async function updatePublicUsersMarkers() {
+        if (!map) return;
+        
+        // Remove old markers
+        publicUserMarkers.forEach(marker => map.removeLayer(marker));
+        publicUserMarkers = [];
+      
+        try {
+          const response = await window.api.get('/users/locations');
+          if (response && response.users) {
+            response.users.forEach(user => {
+              if (!user.location) return;
+              
+              const flagEmoji = getFlagEmoji(user.country);
+              const markerIcon = L.divIcon({
+                className: 'public-user-marker',
+                html: `
+                  <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;">
+                    <div style="position: absolute; width: 40px; height: 40px; border-radius: 50%; background: rgba(106, 166, 255, 0.15);"></div>
+                    <div style="position: relative; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #a1c4fd, #c2e9fb); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                      <div style="font-size: 14px;">${flagEmoji}</div>
+                      <div style="font-size: 8px; font-weight: bold; color: #1b1b1b; max-width: 30px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${user.username.charAt(0)}</div>
+                    </div>
+                  </div>
+                `,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+              });
+      
+              const marker = L.marker([user.location.latitude, user.location.longitude], {
+                icon: markerIcon
+              }).addTo(map);
+      
+              marker.bindPopup(`
+                <div style="text-align: center; min-width: 160px;">
+                  <div style="font-weight: 800; margin-bottom: 5px;">${user.username}</div>
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 5px;">
+                    <span style="font-size: 20px;">${flagEmoji}</span>
+                    <span>${user.country || 'Unknown'}</span>
+                  </div>
+                  <div class="small">📍 Live location</div>
+                  <div class="small">Updated: ${new Date(user.location.timestamp).toLocaleTimeString()}</div>
+                </div>
+              `);
+      
+              publicUserMarkers.push(marker);
+            });
+          }
+        } catch (err) {
+          console.error('Failed to fetch public user locations:', err);
+        }
+      }
+      
+      // Call it periodically (every 30 seconds) when sharing is enabled? 
+      // Or just call it once and rely on manual refresh?
+      // We'll add a refresh interval when map is ready and the user is authenticated.
+      let publicUsersInterval;
+      function startPublicUsersPolling() {
+        if (publicUsersInterval) clearInterval(publicUsersInterval);
+        updatePublicUsersMarkers();
+        publicUsersInterval = setInterval(updatePublicUsersMarkers, 30000); // every 30 sec
+      }
+      
+      // Call startPublicUsersPolling() after map is initialized and user is logged in.
       
       // Initialize tourist attractions
       function initAttractions() {
@@ -900,6 +1022,16 @@
         
         // Initialize GPS controls
         initGPSControls();
+
+        startPublicUsersPolling();
+
+
+        window.addEventListener('beforeunload', () => {
+          if (publicUsersInterval) {
+            clearInterval(publicUsersInterval);
+            publicUsersInterval = null;
+          }
+        });
         
         // Initialize GPS tracker
         if (window.gpsTracker) {
@@ -922,6 +1054,10 @@
       // Start everything when DOM is loaded
       document.addEventListener('DOMContentLoaded', init);
     })();
+
+
+
+    
     // Recommendation system
     (function() {
       let recommendationMarkers = [];
@@ -1144,6 +1280,9 @@
         recommendationMarkers.push(marker);
         return marker;
       }
+
+
+      
       
       // Load recommendations from backend
       async function loadRecommendations() {
@@ -1388,5 +1527,6 @@
   </script>
 </body>
 </html>
+
 
 
