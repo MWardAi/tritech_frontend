@@ -1025,7 +1025,7 @@
       // Clear recommendation markers
       function clearRecommendationMarkers() {
         recommendationMarkers.forEach(marker => {
-          if (window.map && marker) map.removeLayer(marker);
+          if (window.map && marker) window.map.removeLayer(marker);
         });
         recommendationMarkers = [];
       }
@@ -1478,6 +1478,7 @@
   </script>
 </body>
 </html>
+
 
 
 
