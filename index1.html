@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SmartTourist – Explore Syria Intelligently</title>
+
+  <!-- Fonts & Styles (same creamy palette) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --cream-1: #fffdf8;
+      --cream-2: #fff6ea;
+      --blue-cream: #eaf6ff;
+      --accent: #6aa6ff;
+      --muted: #7b7b7b;
+      --radius: 14px;
+      --shadow: 0 8px 30px rgba(20,20,30,0.08);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: linear-gradient(180deg, var(--cream-1) 0%, var(--blue-cream) 100%);
+      color: #1b1b1b;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .hero-card {
+      max-width: 720px;
+      width: 100%;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(8px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 48px 32px;
+      text-align: center;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--accent), #4b8bff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: white;
+      font-weight: 800;
+      font-size: 28px;
+      box-shadow: 0 12px 28px rgba(75,139,255,0.2);
+    }
+    h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      color: #0f1720;
+    }
+    .tagline {
+      font-size: 18px;
+      color: #2c3e4f;
+      margin-bottom: 24px;
+      font-weight: 400;
+    }
+    .description {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #3a4a5a;
+      margin-bottom: 40px;
+      padding: 0 12px;
+    }
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 48px;
+    }
+    .feature {
+      background: rgba(106,166,255,0.08);
+      padding: 12px 20px;
+      border-radius: 40px;
+      font-weight: 600;
+      color: var(--accent);
+      border: 1px solid rgba(106,166,255,0.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .actions {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 32px;
+      border-radius: 40px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 16px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      text-decoration: none;
+    }
+    .btn.primary {
+      background: linear-gradient(90deg, var(--accent), #4b8bff);
+      color: white;
+      box-shadow: 0 12px 28px rgba(75,139,255,0.25);
+    }
+    .btn.secondary {
+      background: transparent;
+      color: var(--accent);
+      border: 1.5px solid rgba(106,166,255,0.4);
+    }
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 32px rgba(75,139,255,0.3);
+    }
+    .footer-note {
+      margin-top: 48px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    @media (max-width: 500px) {
+      .hero-card { padding: 32px 20px; }
+      h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero-card">
+      <div class="logo">ST</div>
+      <h1>SmartTourist</h1>
+      <div class="tagline">Intelligent travel companion for Syria</div>
+      <div class="description">
+        Discover historical treasures, cultural gems, and personalised recommendations<br>
+        powered by AI. Share your journey, see where others are exploring, and make the most of your visit.
+      </div>
+
+      <div class="features">
+        <span class="feature">📍 Live location sharing</span>
+        <span class="feature">🤖 AI recommendations</span>
+        <span class="feature">🗺️ Interactive map</span>
+        <span class="feature">🏛️ 50+ places</span>
+      </div>
+
+      <div class="actions">
+        <a href="auth.html?form=signup" class="btn primary">✨ No account? Sign up</a>
+        <a href="auth.html?form=login" class="btn secondary">🔐 Have an account? Log in</a>
+      </div>
+
+      <div class="footer-note">
+        Continue as guest? <a href="map.html" style="color: var(--accent); text-decoration: none; font-weight: 600;">Explore map</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Optional: pre-fill the form tab based on URL parameter
+    // (will be handled by auth.html)
+  </script>
+</body>
+</html>
