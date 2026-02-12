@@ -363,7 +363,7 @@
       
       // Redirect if not authenticated
       if (!token) {
-        window.location.href = 'index.html';
+        window.location.href = 'auth.html';
         return;
       }
       
@@ -613,7 +613,7 @@
       
       logoutBtn.addEventListener('click', () => {
         localStorage.removeItem(TOKEN_KEY);
-        window.location.href = 'index.html';
+        window.location.href = 'auth.html';
       });
       
       // Initialize
@@ -621,4 +621,5 @@
     });
   </script>
 </body>
+
 </html>
