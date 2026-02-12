@@ -858,155 +858,106 @@
       
       // Call startPublicUsersPolling() after map is initialized and user is logged in.
       
-      // Initialize tourist attractions
-      function initAttractions() {
-        attractions = [
-          {
-            name: "Umayyad Mosque",
-            coords: [33.5117, 36.3064],
-            type: "historical",
-            description: "One of the largest and oldest mosques in the world. A masterpiece of early Islamic architecture."
-          },
-          {
-            name: "Damascus Citadel",
-            coords: [33.5110, 36.2996],
-            type: "historical",
-            description: "A large medieval fortified palace with origins dating back to Roman times."
-          },
-          {
-            name: "Al-Hamidiyah Souq",
-            coords: [33.5104, 36.3048],
-            type: "cultural",
-            description: "The largest and most vibrant market in Damascus, with a history dating back to the Ottoman era."
-          },
-          {
-            name: "National Museum of Damascus",
-            coords: [33.5155, 36.2931],
-            type: "cultural",
-            description: "The national museum of Syria, housing artifacts from across the country's rich history."
-          },
-          {
-            name: "Azm Palace",
-            coords: [33.5095, 36.3055],
-            type: "historical",
-            description: "An 18th-century palace built for the Ottoman governor of Damascus, now a museum."
-          },
-          {
-            name: "Mount Qasioun",
-            coords: [33.5317, 36.2486],
-            type: "scenic",
-            description: "A mountain overlooking Damascus with panoramic views of the city."
-          },
-          {
-            name: "Sayyidah Zaynab Mosque",
-            coords: [33.4464, 36.3361],
-            type: "religious",
-            description: "An important Shia shrine dedicated to Zaynab bint Ali."
-          },
-          {
-            name: "Tekkiye Mosque Complex",
-            coords: [33.5153, 36.2919],
-            type: "historical",
-            description: "A 16th-century Ottoman complex built by the famous architect Sinan."
-          },
-          {
-            name: "Chapel of Saint Paul",
-            coords: [33.5092, 36.3102],
-            type: "religious",
-            description: "Historic chapel commemorating the escape of Saint Paul from Damascus."
-          },
-          {
-            name: "Damascus Opera House",
-            coords: [33.5194, 36.2900],
-            type: "cultural",
-            description: "Modern cultural venue hosting performances and events."
-          }
-        ];
-        
-        const typeColors = {
-          historical: '#ff6a6a',
-          cultural: '#4bff8b',
-          scenic: '#ffb74b',
-          religious: '#b36aff'
-        };
-        
-        const defaultColor = '#6aa6ff';
-        
-        // Add markers for each attraction
-        attractions.forEach(attraction => {
-          const markerColor = typeColors[attraction.type] || defaultColor;
-          
-          const marker = L.circleMarker(attraction.coords, {
-            radius: 8,
-            fillColor: markerColor,
-            color: '#fff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.8
-          }).addTo(map);
-          
-          const popupContent = `
-            <div style="min-width: 200px; padding: 5px;">
-              <h3 style="margin: 0 0 8px 0; color: #1b1b1b;">${attraction.name}</h3>
-              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${markerColor};"></span>
-                <span style="font-size: 12px; text-transform: capitalize; color: #7b7b7b;">${attraction.type}</span>
-              </div>
-              <p style="margin: 0; font-size: 14px; line-height: 1.4;">${attraction.description}</p>
-            </div>
-          `;
-          
-          marker.bindPopup(popupContent);
-          
-          marker.on('mouseover', function() {
-            this.setStyle({ fillOpacity: 1, radius: 10 });
-          });
-          
-          marker.on('mouseout', function() {
-            this.setStyle({ fillOpacity: 0.8, radius: 8 });
-          });
-        });
-        
-        // Fit bounds to show all attractions
-        const bounds = L.latLngBounds(attractions.map(a => a.coords));
-        map.fitBounds(bounds.pad(0.1));
-      }
+      
       
       // Initialize map
       function initMap() {
         map = L.map('map-container').setView([33.5138, 36.2765], 13);
-
-        window.map = map; // Add this line
-        
-        // Add OpenStreetMap tile layer
+        window.map = map;   // make globally accessible
+      
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          attribution: '&copy; OpenStreetMap contributors',
           maxZoom: 19,
         }).addTo(map);
-        
-        // Add scale control
+      
         L.control.scale({ imperial: false }).addTo(map);
-        
-        // Add info control
-        const infoControl = L.control({ position: 'bottomleft' });
-        infoControl.onAdd = function(map) {
-          const div = L.DomUtil.create('div', 'info-control');
-          div.innerHTML = `
-            <div style="background: rgba(255,255,255,0.9); padding: 8px 12px; border-radius: 8px; font-size: 12px; border: 1px solid rgba(0,0,0,0.06);">
-              <strong>Map Controls:</strong><br>
-              • Scroll to zoom<br>
-              • Drag to pan<br>
-              • Click markers for details
+      
+        // Add robot marker right after map is ready
+        addRobotMarker();
+      
+        console.log('Map initialized (static attractions removed)');
+      }
+
+      //
+      function addRobotMarker() {
+        if (!map) return;
+      
+        const robotIcon = L.divIcon({
+          className: 'robot-marker',
+          html: `
+            <div style="
+              position: relative;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 56px;
+              height: 56px;
+            ">
+              <!-- Outer glow -->
+              <div style="
+                position: absolute;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(106,166,255,0.25) 0%, rgba(75,139,255,0) 70%);
+                animation: pulse 2s infinite;
+              "></div>
+              <!-- Robot body -->
+              <div style="
+                position: relative;
+                width: 44px;
+                height: 44px;
+                border-radius: 30% 70% 50% 50% / 40% 40% 60% 60%;
+                background: linear-gradient(145deg, #6aa6ff, #4b8bff);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid white;
+                box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+                z-index: 20;
+              ">
+                <span style="font-size: 24px; line-height: 1;">🤖</span>
+                <span style="font-size: 10px; font-weight: bold; color: white; margin-top: -4px;">MUSEUM</span>
+              </div>
+              <!-- small tooltip arrow -->
+              <div style="
+                position: absolute;
+                bottom: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 0;
+                height: 0;
+                border-left: 8px solid transparent;
+                border-right: 8px solid transparent;
+                border-top: 10px solid #4b8bff;
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+              "></div>
             </div>
-          `;
-          return div;
-        };
-        infoControl.addTo(map);
-        
-        // Add attractions
-        initAttractions();
-        
-        console.log('Map initialized');
+          `,
+          iconSize: [56, 66],
+          iconAnchor: [28, 66],
+          popupAnchor: [0, -66]
+        });
+      
+        const marker = L.marker([33.5155, 36.2931], {
+          icon: robotIcon,
+          zIndexOffset: 800
+        }).addTo(map);
+      
+        marker.bindPopup(`
+          <div style="text-align: center; min-width: 200px; padding: 8px;">
+            <div style="font-size: 28px; margin-bottom: 4px;">🤖</div>
+            <h3 style="margin: 4px 0; color: #0f1720;">National Museum of Damascus</h3>
+            <p style="font-size: 13px; color: #3a4a5a; margin: 8px 0;">
+              Syria’s premier museum – home to ancient treasures,<br>Roman artefacts, and the famous Dura‑Europos synagogue.
+            </p>
+            <div style="display: flex; justify-content: center; gap: 8px; margin-top: 8px;">
+              <span style="background: var(--cream-2); padding: 4px 10px; border-radius: 20px; font-size: 11px;">🏛️ museum</span>
+              <span style="background: var(--cream-2); padding: 4px 10px; border-radius: 20px; font-size: 11px;">⭐ 4.6</span>
+            </div>
+          </div>
+        `);
       }
       
       // Main initialization
@@ -1527,6 +1478,7 @@
   </script>
 </body>
 </html>
+
 
 
 
