@@ -196,6 +196,11 @@
       animation: pulse 2s infinite;
     }
 
+    @keyframes popIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
     @media (max-width: 768px) {
       #map-container {
         height: 60vh;
@@ -332,6 +337,41 @@
       
       <div id="no-recommendations" style="display: none; text-align: center; padding: 20px; background: var(--cream-2); border-radius: 8px;">
         <p class="small">No recommendations available. Please enable GPS tracking for personalized recommendations.</p>
+      </div>
+    </div>
+    <!--. -->
+    <!-- QR Discount Section -->
+    <div style="margin-top: 20px; padding: 20px; background: linear-gradient(145deg, #fff9f0, #fff3e0); border-radius: var(--radius); border: 1px solid rgba(255,193,7,0.3);">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <span style="font-size: 28px;">🎟️</span>
+        <h3 style="margin: 0; color: #b85b1a;">Scan & Save</h3>
+      </div>
+      <p class="small" style="margin-bottom: 15px;">
+        Have a discount QR code? Enter the password below to claim a random place discount!
+      </p>
+      
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <input 
+          id="discount-password-input" 
+          type="text" 
+          class="input" 
+          placeholder="Enter discount password" 
+          style="flex: 1; min-width: 200px;"
+        >
+        <button id="claim-discount-btn" class="btn" style="font-size: 14px; background: linear-gradient(90deg, #ff9800, #f57c00);">
+          <span style="margin-right: 6px;">🎁</span> Claim
+        </button>
+      </div>
+    
+      <!-- Hidden discount popup (modal) -->
+      <div id="discount-popup" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 2000;">
+        <div style="background: white; max-width: 400px; width: 90%; padding: 28px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; animation: popIn 0.3s ease;">
+          <div style="font-size: 48px; margin-bottom: 12px;">🎊</div>
+          <h2 style="margin: 0 0 8px; color: #2e7d32;">Discount Unlocked!</h2>
+          <div id="discount-message" style="font-size: 16px; margin-bottom: 20px; color: #1b1b1b;"></div>
+          <div id="discount-place-details" style="margin-bottom: 20px;"></div>
+          <button id="close-discount-popup" class="btn" style="background: var(--accent);">Awesome!</button>
+        </div>
       </div>
     </div>
   </main>
@@ -532,6 +572,98 @@
           }
         }
       }
+
+      //
+
+      // ---------- QR Discount Feature ----------
+      async function initDiscountFeature() {
+        const input = document.getElementById('discount-password-input');
+        const claimBtn = document.getElementById('claim-discount-btn');
+        const popup = document.getElementById('discount-popup');
+        const discountMessage = document.getElementById('discount-message');
+        const discountDetails = document.getElementById('discount-place-details');
+      
+        if (!input || !claimBtn) return;
+      
+        // Auto-fill from URL parameter ?code=...
+        const urlParams = new URLSearchParams(window.location.search);
+        const codeFromQR = urlParams.get('code');
+        if (codeFromQR) {
+          input.value = codeFromQR;
+          // Optionally auto‑claim after a short delay
+          setTimeout(() => claimBtn.click(), 500);
+        }
+      
+        claimBtn.addEventListener('click', async () => {
+          const password = input.value.trim();
+          if (!password) {
+            alert('Please enter a password');
+            return;
+          }
+      
+          claimBtn.disabled = true;
+          claimBtn.innerHTML = '<span>⏳</span> Claiming...';
+      
+          try {
+            const response = await fetch(`${window.BASE_URL}/discount/redeem`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('st_token')
+              },
+              body: JSON.stringify({ password })
+            });
+      
+            const data = await response.json();
+      
+            if (data.success) {
+              // Show popup with discount info
+              discountMessage.textContent = data.discount.message;
+              
+              let detailsHTML = `
+                <div style="background: var(--cream-2); padding: 16px; border-radius: 12px; margin-top: 12px;">
+                  <div style="font-weight: 800; font-size: 20px; margin-bottom: 4px;">${data.discount.place_name}</div>
+                  <div style="display: flex; justify-content: center; gap: 12px; margin: 8px 0;">
+                    <span style="text-decoration: line-through; color: #7b7b7b;">${data.discount.original_price} SYP</span>
+                    <span style="font-weight: 800; color: #d32f2f; font-size: 22px;">${data.discount.discounted_price} SYP</span>
+                  </div>
+                  <span style="background: #ff9800; color: white; padding: 6px 16px; border-radius: 30px; font-weight: bold; display: inline-block;">
+                    ${data.discount.discount_percent}% OFF
+                  </span>
+                </div>
+              `;
+              discountDetails.innerHTML = detailsHTML;
+      
+              popup.style.display = 'flex';
+              
+              // Clear the input
+              input.value = '';
+            } else {
+              alert(data.error || 'Invalid or expired code');
+            }
+          } catch (err) {
+            console.error('Discount claim error:', err);
+            alert('Network error. Please try again.');
+          } finally {
+            claimBtn.disabled = false;
+            claimBtn.innerHTML = '<span style="margin-right: 6px;">🎁</span> Claim';
+          }
+        });
+      
+        // Close popup
+        const closeBtn = document.getElementById('close-discount-popup');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            popup.style.display = 'none';
+          });
+          // Also close when clicking outside
+          popup.addEventListener('click', (e) => {
+            if (e.target === popup) popup.style.display = 'none';
+          });
+        }
+      }
+
+
       
       // Initialize GPS controls
       function initGPSControls() {
@@ -975,6 +1107,10 @@
         initGPSControls();
 
         startPublicUsersPolling();
+
+        // Call inside init() after map is ready
+        // Add this line at the end of your init() function:
+        initDiscountFeature();
 
 
         window.addEventListener('beforeunload', () => {
@@ -1478,6 +1614,7 @@
   </script>
 </body>
 </html>
+
 
 
 
