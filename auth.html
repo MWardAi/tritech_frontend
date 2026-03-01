@@ -511,8 +511,14 @@
               </select>
             </div>
             <div class="col">
-              <label for="su-salary">Salary (USD)</label>
-              <input id="su-salary" class="input" type="number" name="salary" min="0" step="1" required placeholder="Salary in USD">
+              <label for="su-budget">Budget</label>
+              <select id="su-budget" class="input" name="budget" required>
+                <option value="">Select budget</option>
+                <option value="free">Free</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
             </div>
           </div>
 
@@ -703,5 +709,6 @@
   <script src="gps-check.js"></script>
 </body>
 </html>
+
 
 
