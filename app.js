@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
     suPassword: document.getElementById('su-password'),
     suUsername: document.getElementById('su-username'),
     suCountry: document.getElementById('su-country'),
-    suSalary: document.getElementById('su-salary'),
     liEmail: document.getElementById('li-email'),
     liPassword: document.getElementById('li-password'),
     toLogin: document.getElementById('to-login'),
@@ -29,7 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
     profileUsername: document.getElementById('profile-username'),
     profileEmail: document.getElementById('profile-email'),
     profileCountry: document.getElementById('profile-country'),
-    profilePrefs: document.getElementById('profile-prefs')
+    profilePrefs: document.getElementById('profile-prefs'),
+    suBudget: document.getElementById('su-budget')
   };
   
   // State
@@ -194,7 +194,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const password = elements.suPassword.value;
     const username = elements.suUsername.value.trim();
     const country = elements.suCountry.value;
-    const salary = elements.suSalary.value;
+    const budget = elements.suBudget.value;
+    if (!budget) {
+      showMessage('Please select a budget', 'error');
+      return;
+    }
     
     // Validation
     if (!email || !password || !username || !country || selectedPrefs.size === 0) {
@@ -225,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
         password,
         username,
         country,
-        salary: salary ? parseInt(salary) : 0,
+        budget: budget,
         preferences: Array.from(selectedPrefs)
       });
       
@@ -440,3 +444,4 @@ document.addEventListener('DOMContentLoaded', function() {
   init();
 
 });
+
