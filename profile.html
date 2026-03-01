@@ -298,8 +298,8 @@
             <span id="info-country" class="info-value">-</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Salary</span>
-            <span id="info-salary" class="info-value">-</span>
+            <span class="info-label">Budget</span>
+            <span id="info-budget" class="info-value">-</span>
           </div>
         </div>
       </div>
@@ -375,7 +375,7 @@
       const infoUsername = document.getElementById('info-username');
       const infoEmail = document.getElementById('info-email');
       const infoCountry = document.getElementById('info-country');
-      const infoSalary = document.getElementById('info-salary');
+      const infoBudget = document.getElementById('info-budget');
       const currentPrefs = document.getElementById('current-prefs');
       const prefsContainer = document.getElementById('prefs-container');
       const savePrefsBtn = document.getElementById('save-prefs');
@@ -463,7 +463,7 @@
         infoUsername.textContent = user.username || '-';
         infoEmail.textContent = user.email || '-';
         infoCountry.textContent = user.country || '-';
-        infoSalary.textContent = user.salary ? `$${user.salary}` : '-';
+        infoBudget.textContent = user.budget ? user.budget : '-';
         
         // Current preferences
         currentPrefs.innerHTML = '';
@@ -623,3 +623,4 @@
 </body>
 
 </html>
+
