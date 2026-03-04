@@ -881,6 +881,85 @@
           updateGPSStatus(true, window.gpsTracker.lastPosition?.coords);
         }
       }
+
+
+      //
+      // ---------- Robot Vision Feature ----------
+      function initVisionFeature() {
+        const photoInput = document.getElementById('photo-input');
+        const takeBtn = document.getElementById('take-photo-btn');
+        const clearBtn = document.getElementById('clear-photo-btn');
+        const previewDiv = document.getElementById('photo-preview');
+        const previewImg = document.getElementById('preview-image');
+        const resultDiv = document.getElementById('description-result');
+        const resultText = document.getElementById('description-text');
+        const loadingDiv = document.getElementById('vision-loading');
+      
+        if (!takeBtn) return;
+      
+        takeBtn.addEventListener('click', () => {
+          photoInput.click();
+        });
+      
+        photoInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+      
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            previewImg.src = event.target.result;
+            previewDiv.style.display = 'block';
+            clearBtn.style.display = 'inline-flex';
+            resultDiv.style.display = 'none';
+          };
+          reader.readAsDataURL(file);
+      
+          // Prepare upload
+          const formData = new FormData();
+          formData.append('image', file);
+      
+          // Show loading
+          loadingDiv.style.display = 'block';
+          takeBtn.disabled = true;
+      
+          try {
+            const token = localStorage.getItem('st_token');
+            const response = await fetch(`${window.BASE_URL}/api/describe-image`, {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer ' + token
+                // Content-Type set automatically by FormData
+              },
+              body: formData
+            });
+      
+            const data = await response.json();
+            if (response.ok) {
+              resultText.textContent = data.description;
+              resultDiv.style.display = 'block';
+            } else {
+              alert('Error: ' + (data.error || 'Unknown error'));
+            }
+          } catch (err) {
+            console.error('Vision error:', err);
+            alert('Failed to connect to robot vision service.');
+          } finally {
+            loadingDiv.style.display = 'none';
+            takeBtn.disabled = false;
+          }
+        });
+      
+        clearBtn.addEventListener('click', () => {
+          photoInput.value = '';
+          previewDiv.style.display = 'none';
+          resultDiv.style.display = 'none';
+          clearBtn.style.display = 'none';
+        });
+      }
+      
+      
+      
       
       // Load user profile
       async function loadUserProfile() {
@@ -1148,6 +1227,8 @@
         
         // Initialize GPS controls
         initGPSControls();
+
+        initVisionFeature();
 
         startPublicUsersPolling();
 
@@ -1688,6 +1769,7 @@
   </script>
 </body>
 </html>
+
 
 
 
