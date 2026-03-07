@@ -437,6 +437,7 @@
       let userMarker = null;
       let attractions = [];
       let isSharing = false; // default
+      let robotMarker = null;
       // Redirect if not authenticated
       if (!token) {
         window.location.href = 'auth.html';
@@ -1099,6 +1100,72 @@
           console.error('Failed to fetch public user locations:', err);
         }
       }
+
+      //
+      async function updateRobotMarker() {
+        if (!map) return;
+        try {
+          const response = await fetch(`${window.BASE_URL}/robot/location`);
+          const data = await response.json();
+          if (data.location) {
+            const { latitude, longitude, updated_at } = data.location;
+      
+            // Define the robot icon (same as before, maybe with "ROBOT" text)
+            const robotIcon = L.divIcon({
+              className: 'robot-marker',
+              html: `
+                <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 56px; height: 56px;">
+                  <div style="position: absolute; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle, rgba(106,166,255,0.25) 0%, rgba(75,139,255,0) 70%); animation: pulse 2s infinite;"></div>
+                  <div style="position: relative; width: 44px; height: 44px; border-radius: 30% 70% 50% 50% / 40% 40% 60% 60%; background: linear-gradient(145deg, #6aa6ff, #4b8bff); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 6px 18px rgba(0,0,0,0.2); z-index: 20;">
+                    <span style="font-size: 24px; line-height: 1;">🤖</span>
+                    <span style="font-size: 10px; font-weight: bold; color: white; margin-top: -4px;">ROBOT</span>
+                  </div>
+                  <div style="position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 10px solid #4b8bff; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));"></div>
+                </div>
+              `,
+              iconSize: [56, 66],
+              iconAnchor: [28, 66],
+              popupAnchor: [0, -66]
+            });
+      
+            if (!robotMarker) {
+              // Create new marker
+              robotMarker = L.marker([latitude, longitude], { icon: robotIcon, zIndexOffset: 800 }).addTo(map);
+              robotMarker.bindPopup(`
+                <div style="text-align: center; min-width: 200px; padding: 8px;">
+                  <div style="font-size: 28px; margin-bottom: 4px;">🤖</div>
+                  <h3 style="margin: 4px 0; color: #0f1720;">Robot Guide</h3>
+                  <p style="font-size: 13px; color: #3a4a5a; margin: 8px 0;">
+                    I'm currently roaming around Damascus!<br>Last seen here.
+                  </p>
+                  <div class="small">Updated: ${new Date(updated_at).toLocaleTimeString()}</div>
+                </div>
+              `);
+            } else {
+              // Update existing marker position
+              robotMarker.setLatLng([latitude, longitude]);
+              robotMarker.setPopupContent(`
+                <div style="text-align: center; min-width: 200px; padding: 8px;">
+                  <div style="font-size: 28px; margin-bottom: 4px;">🤖</div>
+                  <h3 style="margin: 4px 0; color: #0f1720;">Robot Guide</h3>
+                  <p style="font-size: 13px; color: #3a4a5a; margin: 8px 0;">
+                    I'm currently roaming around Damascus!<br>Last seen here.
+                  </p>
+                  <div class="small">Updated: ${new Date(updated_at).toLocaleTimeString()}</div>
+                </div>
+              `);
+            }
+          } else {
+            // No location: remove marker if it exists
+            if (robotMarker) {
+              map.removeLayer(robotMarker);
+              robotMarker = null;
+            }
+          }
+        } catch (err) {
+          console.error('Failed to update robot marker:', err);
+        }
+      }
       
       // Call it periodically (every 30 seconds) when sharing is enabled? 
       // Or just call it once and rely on manual refresh?
@@ -1127,7 +1194,7 @@
         L.control.scale({ imperial: false }).addTo(map);
       
         // Add robot marker right after map is ready
-        addRobotMarker();
+        
       
         console.log('Map initialized (static attractions removed)');
       }
@@ -1231,6 +1298,10 @@
         initVisionFeature();
 
         startPublicUsersPolling();
+
+        // Fetch robot location immediately, then every 30 seconds
+        updateRobotMarker();
+        setInterval(updateRobotMarker, 30000);
 
         // Call inside init() after map is ready
         // Add this line at the end of your init() function:
@@ -1769,6 +1840,7 @@
   </script>
 </body>
 </html>
+
 
 
 
