@@ -1447,6 +1447,8 @@
         const score = place.score || 0.5;
         const color = getRecommendationColor(score);
         
+        const emoji = getEmojiForPlace(place); // Get appropriate emoji
+
         const recommendationIcon = L.divIcon({
           className: 'recommendation-marker',
           html: `
@@ -1468,7 +1470,7 @@
                 animation: pulse 2s infinite;
               "></div>
               
-              <!-- Star background -->
+              <!-- Colored circle with emoji -->
               <div style="
                 position: relative;
                 width: 36px;
@@ -1481,9 +1483,10 @@
                 border: 3px solid white;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.2);
                 z-index: 10;
+                font-size: 18px;
+                color: white;
               ">
-                <!-- Star emoji -->
-                <div style="font-size: 16px; color: white;">🌟</div>
+                ${emoji}
                 
                 <!-- Score badge -->
                 <div style="
@@ -1629,6 +1632,34 @@
         
         recommendationMarkers.push(marker);
         return marker;
+      }
+
+      //
+      // Returns an appropriate emoji based on place category or tags
+      function getEmojiForPlace(place) {
+        const category = (place.category || '').toLowerCase();
+        const tags = place.tags || [];
+        
+        // Check category first
+        if (category.includes('museum')) return '🏛️';
+        if (category.includes('historical') || category.includes('heritage')) return '🏛️';
+        if (category.includes('nature') || category.includes('park') || category.includes('mountain')) return '🌿';
+        if (category.includes('restaurant') || category.includes('food')) return '🍽️';
+        if (category.includes('shopping') || category.includes('market')) return '🛍️';
+        if (category.includes('religious') || category.includes('mosque') || category.includes('church')) return '🕌';
+        if (category.includes('entertainment') || category.includes('fun')) return '🎉';
+        if (category.includes('castle') || category.includes('fortress')) return '🏰';
+        
+        // Fallback to tags
+        if (tags.some(t => t.includes('ancient') || t.includes('historical'))) return '🏛️';
+        if (tags.some(t => t.includes('nature') || t.includes('park'))) return '🌿';
+        if (tags.some(t => t.includes('food') || t.includes('restaurant'))) return '🍽️';
+        if (tags.some(t => t.includes('shopping'))) return '🛍️';
+        if (tags.some(t => t.includes('religious'))) return '🕌';
+        if (tags.some(t => t.includes('entertainment'))) return '🎉';
+        
+        // Default
+        return '📍';
       }
 
 
@@ -1840,6 +1871,7 @@
   </script>
 </body>
 </html>
+
 
 
 
